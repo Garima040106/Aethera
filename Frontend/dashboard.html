@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aethera forecast dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;600&display=swap">
+<style>
+body{margin:0}
+a{color:#1A73E8}a:hover{color:#1557B0}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;background:#F8F9FA;color:#3C4043;font-family:Roboto,'Noto Sans Devanagari',sans-serif;font-size:16px;line-height:1.6">
+
+<!-- Nav -->
+<div style="background:#FFFFFF;border-bottom:1px solid #DADCE0">
+<div style="max-width:1280px;margin:0 auto;padding:16px 24px;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+<a href="index.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:#202124;font-weight:700;font-size:20px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+Aethera
+</a>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:24px">
+<a href="dashboard.html" style="color:#1A73E8;text-decoration:none;font-weight:700;font-size:14px;border-bottom:2px solid #1A73E8;padding-bottom:2px">Forecast</a>
+<a href="phone.html" style="color:#3C4043;text-decoration:none;font-weight:500;font-size:14px">Phone app</a>
+<a href="caregiver.html" style="color:#3C4043;text-decoration:none;font-weight:500;font-size:14px">Care circle</a>
+</div>
+</div>
+</div>
+
+<div style="max-width:1280px;width:100%;margin:0 auto;padding:32px 24px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+
+<!-- Header -->
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<h1 style="margin:0;font-size:2.25rem;line-height:1.2;font-weight:700;color:#202124">Delhi NCR, next 72 hours</h1>
+<div style="font-size:14px;color:#5F6368">Coupled weather and air forecast with inversion and plume tracking</div>
+</div>
+<div style="font-family:'JetBrains Mono',monospace;font-size:12px;background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;padding:4px 10px;color:#5F6368">Sample data for the design preview</div>
+</div>
+
+<!-- Summary strip -->
+<div style="background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;flex-wrap:wrap">
+<div style="flex:1 1 200px;min-width:0;padding:20px 24px;display:flex;flex-direction:column;gap:2px;border-right:1px solid #F1F3F4">
+<div style="font-size:14px;color:#5F6368">AQI now</div>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:32px;font-weight:700;color:#202124;font-variant-numeric:tabular-nums">210</span><span style="font-size:14px;font-weight:500;color:#B06000">Poor</span></div>
+</div>
+<div style="flex:1 1 200px;min-width:0;padding:20px 24px;display:flex;flex-direction:column;gap:2px;border-right:1px solid #F1F3F4">
+<div style="font-size:14px;color:#5F6368">Peak AQI, at +30 h</div>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:32px;font-weight:700;color:#202124;font-variant-numeric:tabular-nums">436</span><span style="font-size:14px;font-weight:500;color:#C5221F">Severe</span></div>
+</div>
+<div style="flex:1 1 200px;min-width:0;padding:20px 24px;display:flex;flex-direction:column;gap:2px;border-right:1px solid #F1F3F4">
+<div style="font-size:14px;color:#5F6368">Inversion</div>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:32px;font-weight:700;color:#202124">Strong</span><span style="font-size:14px;color:#5F6368;font-variant-numeric:tabular-nums">+18 h to +42 h</span></div>
+</div>
+<div style="flex:1 1 200px;min-width:0;padding:20px 24px;display:flex;flex-direction:column;gap:2px">
+<div style="font-size:14px;color:#5F6368">Smoke plume arrives</div>
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:32px;font-weight:700;color:#202124;font-variant-numeric:tabular-nums">~14 h</span><span style="font-size:14px;color:#5F6368">north-west wind</span></div>
+</div>
+</div>
+
+<!-- Chart + right column -->
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+
+<div style="flex:2 1 560px;min-width:0;box-sizing:border-box;background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+<div style="font-weight:700;font-size:18px;color:#202124">AQI forecast, 72 hours</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:14px">
+<span style="display:flex;align-items:center;gap:8px"><svg width="24" height="8" aria-hidden="true"><line x1="0" y1="4" x2="24" y2="4" stroke="#1A73E8" stroke-width="3"/></svg>Aethera, weather and smoke coupled</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="24" height="8" aria-hidden="true"><line x1="0" y1="4" x2="24" y2="4" stroke="#5F6368" stroke-width="2" stroke-dasharray="4 3"/></svg>Without feedback</span>
+</div>
+</div>
+<div style="overflow-x:auto">
+<svg viewBox="0 0 720 280" width="100%" role="img" aria-label="Line chart of forecast AQI over 72 hours. The coupled forecast peaks at 436 at 30 hours and stays above the forecast without feedback." style="display:block;min-width:520px">
+<rect x="212" y="16" width="218.7" height="224" fill="#EA4335" fill-opacity="0.07"/>
+<text x="218" y="32" font-family="Roboto, sans-serif" font-size="11" fill="#C5221F">Strong inversion</text>
+<g stroke="#E8EAED" stroke-width="1">
+<line x1="48" y1="16" x2="704" y2="16"/>
+<line x1="48" y1="60.8" x2="704" y2="60.8"/>
+<line x1="48" y1="105.6" x2="704" y2="105.6"/>
+<line x1="48" y1="150.4" x2="704" y2="150.4"/>
+<line x1="48" y1="195.2" x2="704" y2="195.2"/>
+</g>
+<line x1="48" y1="240" x2="704" y2="240" stroke="#DADCE0" stroke-width="1"/>
+<g font-family="'JetBrains Mono', monospace" font-size="11" fill="#5F6368" text-anchor="end">
+<text x="40" y="20">500</text>
+<text x="40" y="64.8">400</text>
+<text x="40" y="109.6">300</text>
+<text x="40" y="154.4">200</text>
+<text x="40" y="199.2">100</text>
+<text x="40" y="244">0</text>
+</g>
+<g font-family="'JetBrains Mono', monospace" font-size="11" fill="#5F6368" text-anchor="middle">
+<text x="48" y="262">Now</text>
+<text x="157.3" y="262">+12 h</text>
+<text x="266.7" y="262">+24 h</text>
+<text x="376" y="262">+36 h</text>
+<text x="485.3" y="262">+48 h</text>
+<text x="594.7" y="262">+60 h</text>
+<text x="704" y="262">+72 h</text>
+</g>
+<polygon points="48,240 48,145.9 102.7,133.4 157.3,121.3 212,95.8 266.7,66.2 321.3,44.7 376,55.4 430.7,73.8 485.3,90.4 540,107.4 594.7,122.6 649.3,132 704,139.2 704,240" fill="#1A73E8" fill-opacity="0.08"/>
+<polyline points="48,148.2 102.7,140.6 157.3,134.3 212,122.6 266.7,106.5 321.3,91.7 376,96.6 430.7,105.6 485.3,114.6 540,122.6 594.7,130.7 649.3,136.1 704,140.6" fill="none" stroke="#5F6368" stroke-width="2" stroke-dasharray="5 4"/>
+<polyline points="48,145.9 102.7,133.4 157.3,121.3 212,95.8 266.7,66.2 321.3,44.7 376,55.4 430.7,73.8 485.3,90.4 540,107.4 594.7,122.6 649.3,132 704,139.2" fill="none" stroke="#1A73E8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="321.3" cy="44.7" r="5" fill="#FFFFFF" stroke="#1A73E8" stroke-width="3"/>
+<text x="332" y="40" font-family="Roboto, sans-serif" font-size="12" font-weight="700" fill="#202124">436 at +30 h</text>
+</svg>
+</div>
+<div style="font-size:14px;color:#5F6368">The gap between the two lines is what a forecast without weather feedback would miss. Sample values.</div>
+</div>
+
+<div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:24px">
+<div style="background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font-weight:700;font-size:18px;color:#202124">Inversion strength</div>
+<div style="display:flex;gap:4px">
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;background:#F1F3F4;color:#5F6368;font-size:14px">Weak</div>
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;background:#F1F3F4;color:#5F6368;font-size:14px">Moderate</div>
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:8px;background:#EA4335;color:#FFFFFF;font-size:14px;font-weight:700">Strong</div>
+</div>
+<div style="font-size:14px">Warm air sits over cold air from +18 h to +42 h. Smoke cannot rise, so it stays near the ground. Boundary layer height is low.</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:12px;flex:1">
+<div style="font-weight:700;font-size:18px;color:#202124">What to do</div>
+<div style="display:flex;gap:12px;font-size:14px"><span style="flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1A73E8;padding-top:2px;width:64px">+12 to +48 h</span><span>Move school assemblies and PE indoors.</span></div>
+<div style="display:flex;gap:12px;font-size:14px"><span style="flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1A73E8;padding-top:2px;width:64px">Morning</span><span>Outdoor workers: plan the cleanest two hours, wear an N95.</span></div>
+<div style="display:flex;gap:12px;font-size:14px"><span style="flex:0 0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#1A73E8;padding-top:2px;width:64px">Tonight</span><span>Call parents who live alone with asthma or a heart condition.</span></div>
+</div>
+</div>
+</div>
+
+<!-- Plume map + sources -->
+<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:stretch">
+
+<div style="flex:1.3 1 480px;min-width:0;box-sizing:border-box;background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font-weight:700;font-size:18px;color:#202124">Where the smoke goes</div>
+<svg viewBox="0 0 560 320" width="100%" role="img" aria-label="Schematic map. Fire points in the north-west send a smoke plume toward Delhi NCR, arriving in about 14 hours." style="display:block;max-width:100%">
+<rect x="0.5" y="0.5" width="559" height="319" rx="8" fill="#F8F9FA" stroke="#DADCE0"/>
+<path d="M170 100 L330 190" stroke="#1A73E8" stroke-opacity="0.14" stroke-width="44" stroke-linecap="round" fill="none"/>
+<path d="M170 100 L322 185" stroke="#1A73E8" stroke-width="2.5" stroke-dasharray="6 5" fill="none"/>
+<polygon points="334,192 316,190 324,176" fill="#1A73E8"/>
+<g fill="#EA4335"><circle cx="60" cy="70" r="5"/><circle cx="95" cy="48" r="5"/><circle cx="110" cy="92" r="5"/><circle cx="145" cy="62" r="5"/><circle cx="85" cy="115" r="5"/><circle cx="150" cy="105" r="5"/><circle cx="125" cy="130" r="5"/></g>
+<text x="40" y="168" font-family="Roboto, sans-serif" font-size="12" font-weight="500" fill="#3C4043">Fire points, Punjab and Haryana</text>
+<g fill="#FFFFFF" stroke="#1A73E8" stroke-width="2"><circle cx="210" cy="122.5" r="4"/><circle cx="250" cy="145" r="4"/><circle cx="290" cy="167.5" r="4"/></g>
+<g font-family="'JetBrains Mono', monospace" font-size="11" fill="#1A73E8">
+<text x="196" y="108">+4 h</text>
+<text x="256" y="136">+8 h</text>
+<text x="296" y="158">+11 h</text>
+</g>
+<rect x="340" y="170" width="170" height="100" rx="8" fill="#FFFFFF" stroke="#202124" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="356" y="198" font-family="Roboto, sans-serif" font-size="14" font-weight="700" fill="#202124">Delhi NCR</text>
+<text x="356" y="220" font-family="Roboto, sans-serif" font-size="12" fill="#3C4043">Arrives in about 14 h</text>
+<text x="356" y="240" font-family="Roboto, sans-serif" font-size="12" fill="#C5221F">Held low by inversion</text>
+<g transform="translate(520 40)"><path d="M0 14 L0 -14" stroke="#3C4043" stroke-width="2"/><polygon points="0,-18 -5,-8 5,-8" fill="#3C4043"/><text x="0" y="30" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#3C4043">N</text></g>
+<text x="544" y="308" text-anchor="end" font-family="Roboto, sans-serif" font-size="11" fill="#5F6368">Schematic, not to scale</text>
+</svg>
+<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:14px">
+<span style="display:flex;align-items:center;gap:8px"><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="#EA4335"/></svg>Active fire point</span>
+<span style="display:flex;align-items:center;gap:8px"><svg width="24" height="8" aria-hidden="true"><line x1="0" y1="4" x2="24" y2="4" stroke="#1A73E8" stroke-width="2.5" stroke-dasharray="5 4"/></svg>Plume path with arrival time</span>
+</div>
+</div>
+
+<div style="flex:1 1 380px;min-width:0;box-sizing:border-box;background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:16px">
+<div style="font-weight:700;font-size:18px;color:#202124">Where these numbers come from</div>
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 0;border-bottom:1px solid #F1F3F4"><div style="min-width:0"><div style="font-weight:500;color:#202124">CPCB and OpenAQ</div><div style="font-size:14px;color:#5F6368">Air quality readings</div></div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F6368;align-self:center">18 min ago</div></div>
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 0;border-bottom:1px solid #F1F3F4"><div style="min-width:0"><div style="font-weight:500;color:#202124">NASA FIRMS</div><div style="font-size:14px;color:#5F6368">Active fire points</div></div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F6368;align-self:center">41 min ago</div></div>
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 0;border-bottom:1px solid #F1F3F4"><div style="min-width:0"><div style="font-weight:500;color:#202124">IMD and AWS Open Data</div><div style="font-size:14px;color:#5F6368">Wind, temperature, boundary layer</div></div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F6368;align-self:center">1 h ago</div></div>
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:12px 0"><div style="min-width:0"><div style="font-weight:500;color:#202124">Aethera model</div><div style="font-size:14px;color:#5F6368">72-hour coupled forecast</div></div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5F6368;align-self:center">Hourly run</div></div>
+</div>
+<div style="font-size:14px;color:#5F6368">Each feed updates on its own schedule, so a station reading and a satellite pass are not the same age. The ages above are samples.</div>
+</div>
+</div>
+
+<!-- Decision log -->
+<div style="background:#FFFFFF;border:1px solid #DADCE0;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);padding:24px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px">
+<div style="font-weight:700;font-size:18px;color:#202124">Why did I get this alert?</div>
+<div style="font-size:14px;color:#5F6368">Agent decision log, sample</div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:16px 0;border-bottom:1px solid #F1F3F4">
+<div style="flex:0 0 72px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5F6368;padding-top:2px">22:00</div>
+<div style="flex:0 0 140px;font-weight:500;color:#1A73E8">Air Watcher</div>
+<div style="flex:1 1 320px;min-width:0"><div style="font-weight:500;color:#202124">Raised Delhi NCR risk to High.</div><div style="font-size:14px;color:#5F6368">A strong inversion is forecast from +18 h and fire points are upwind.</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:16px 0;border-bottom:1px solid #F1F3F4">
+<div style="flex:0 0 72px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5F6368;padding-top:2px">05:30</div>
+<div style="flex:0 0 140px;font-weight:500;color:#1A73E8">Health Guardian</div>
+<div style="flex:1 1 320px;min-width:0"><div style="font-weight:500;color:#202124">Chose "stay in, light walk indoors" for Kamla.</div><div style="font-size:14px;color:#5F6368">Her breathing risk is medium and outside air is very poor. The advice comes from the safe advice list.</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:16px 0;border-bottom:1px solid #F1F3F4">
+<div style="flex:0 0 72px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5F6368;padding-top:2px">06:00</div>
+<div style="flex:0 0 140px;font-weight:500;color:#1A73E8">Care Circle</div>
+<div style="flex:1 1 320px;min-width:0"><div style="font-weight:500;color:#202124">Sent the Hindi morning message to Kamla.</div><div style="font-size:14px;color:#5F6368">Her language setting is Hindi.</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:16px 0;border-bottom:1px solid #F1F3F4">
+<div style="flex:0 0 72px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5F6368;padding-top:2px">10:12</div>
+<div style="flex:0 0 140px;font-weight:500;color:#1A73E8">Health Guardian</div>
+<div style="flex:1 1 320px;min-width:0"><div style="font-weight:500;color:#202124">Asked "Are you ok?".</div><div style="font-size:14px;color:#5F6368">On her phone, breathing rate rose and blood oxygen dropped from her usual range.</div></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:4px 24px;padding:16px 0 4px">
+<div style="flex:0 0 72px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5F6368;padding-top:2px">10:14</div>
+<div style="flex:0 0 140px;font-weight:500;color:#1A73E8">Care Circle</div>
+<div style="flex:1 1 320px;min-width:0"><div style="font-weight:500;color:#202124">Messaged Rohan.</div><div style="font-size:14px;color:#5F6368">No reply for two minutes. Only the risk level was shared, which is what Kamla allowed.</div></div>
+</div>
+</div>
+
+<div style="font-size:14px;color:#5F6368">Support tool, not a medical device. In an emergency call 112. Aethera &middot; Team Prometheus &middot; Powered by AWS architecture.</div>
+
+</div>
+</div>
+</body>
+</html>
