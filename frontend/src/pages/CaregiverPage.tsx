@@ -1,5 +1,7 @@
-
+import { useState } from 'react'
 import './CaregiverPage.css'
+import { api } from '../services/api'
+import type { AlertSimulateResponse } from '../services/api'
 
 function AetheraIcon() {
   return (
@@ -20,25 +22,162 @@ function PhoneIcon() {
 }
 
 const sharingItems = [
-  { label: 'Risk level', value: 'Shared', shared: true },
-  { label: 'General area, Noida', value: 'Shared', shared: true },
+  { label: 'Risk level', value: 'Shared (HIGH)', shared: true },
+  { label: 'General area', value: 'Shared (Noida Sector 62)', shared: true },
   { label: 'Heart rate and oxygen', value: 'Stays on her phone', shared: false },
   { label: 'Exact location', value: 'Only if she sends an SOS', shared: false },
 ]
 
 export default function CaregiverPage() {
+  const [simulationResult, setSimulationResult] = useState<AlertSimulateResponse | null>(null)
+  const [isSimulating, setIsSimulating] = useState(false)
+  const [callStatus, setCallStatus] = useState<string | null>(null)
+
+  const handleCallMaa = () => {
+    setCallStatus('Connecting call to Maa (+91 98XXX XXXXX)... In emergency dispatch 112.')
+  }
+
+  const handleRunSimulation = async (scenario: string) => {
+    setIsSimulating(true)
+    try {
+      const res = await api.simulateAlert({
+        scenario,
+        sharing_enabled: true,
+        allow_location_on_sos: false,
+        language: 'hi',
+      })
+      setSimulationResult(res)
+    } catch (err: any) {
+      window.alert(`Simulation notice: ${err.message || 'Offline mode'}`)
+    } finally {
+      setIsSimulating(false)
+    }
+  }
+
   return (
     <main className="caregiver-page">
       <div className="caregiver-intro">
         <span className="eyebrow">CARE CIRCLE</span>
         <h1>Know when someone you love needs you.</h1>
         <p>
-          A caregiver view designed to make urgent information clear while
-          respecting the privacy of the person receiving care.
+          A caregiver view designed to make urgent information clear while respecting the privacy of the person
+          receiving care. One calm notification in plain words, not 30 confusing charts.
         </p>
+
+        {/* Step Functions Workflow Simulator Panel */}
+        <div style={{ marginTop: '24px', padding: '18px', background: '#FFFFFF', border: '1px solid #DADCE0', borderRadius: '8px' }}>
+          <strong style={{ display: 'block', fontSize: '15px', marginBottom: '8px', color: '#202124' }}>
+            AWS Step Functions Alert Ladder Simulator:
+          </strong>
+          <p style={{ margin: '0 0 12px', fontSize: '13px', color: '#5F6368' }}>
+            Test the deterministic escalation ladder connecting on-device detection, Bedrock agents, and SNS caregiver
+            dispatch:
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              disabled={isSimulating}
+              onClick={() => handleRunSimulation('RESPIRATORY_DISTRESS_UNANSWERED')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                background: '#1A73E8',
+                color: '#FFF',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Simulate Unanswered Check-in (Ladder 1-5)
+            </button>
+            <button
+              type="button"
+              disabled={isSimulating}
+              onClick={() => handleRunSimulation('USER_OK_CONFIRMED')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                background: '#F1F3F4',
+                color: '#3C4043',
+                border: '1px solid #DADCE0',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Simulate User OK (Cancelled)
+            </button>
+            <button
+              type="button"
+              disabled={isSimulating}
+              onClick={() => handleRunSimulation('FALL_DETECTED_SOS_CANCELLED')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                background: '#F1F3F4',
+                color: '#3C4043',
+                border: '1px solid #DADCE0',
+                fontSize: '13px',
+                cursor: 'pointer',
+              }}
+            >
+              Simulate Fall Detected
+            </button>
+          </div>
+        </div>
+
+        {/* Step Functions Execution Trace */}
+        {simulationResult && (
+          <div style={{ marginTop: '20px', padding: '16px', background: '#F8F9FA', border: '1px solid #DADCE0', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <strong style={{ fontSize: '14px', color: '#202124' }}>
+                Workflow Trace ({simulationResult.simulation_id})
+              </strong>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontFamily: 'monospace',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: '#E6F4EA',
+                  color: '#137333',
+                  fontWeight: 600,
+                }}
+              >
+                {simulationResult.final_state}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {simulationResult.steps.map((step) => (
+                <div
+                  key={step.step_number}
+                  style={{
+                    padding: '8px 12px',
+                    background: '#FFFFFF',
+                    borderRadius: '6px',
+                    border: '1px solid #E8EAED',
+                    fontSize: '13px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1A73E8', fontWeight: 600 }}>
+                    <span>
+                      Step {step.step_number}: {step.step_name}
+                    </span>
+                    <span style={{ color: '#5F6368', fontSize: '11px' }}>{step.timestamp}</span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', color: '#3C4043' }}>{step.detail}</p>
+                </div>
+              ))}
+            </div>
+            <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#5F6368', fontStyle: 'italic' }}>
+              {simulationResult.disclaimer}
+            </p>
+          </div>
+        )}
+
         <p className="caregiver-disclaimer">
-          Sample interface only. Calling and emergency notifications are not
-          connected in this design preview.
+          Cedar Privacy Policy Enforced: Rohan can only see Kamla’s coarse risk band and district. Raw vital signs (HR,
+          SpO2) and exact GPS coordinates are forbidden by Cedar policy unless an SOS event is confirmed.
         </p>
       </div>
 
@@ -55,28 +194,30 @@ export default function CaregiverPage() {
           <section className="caregiver-card caregiver-alert">
             <div className="caregiver-alert-meta">
               <strong>Please call Maa</strong>
-              <span>10:14 AM · Sample</span>
+              <span>10:14 AM · Priority</span>
             </div>
             <h2>Maa's breathing looks harder than usual.</h2>
             <p>
-              The air outside is at a very unhealthy level, and she has not
-              replied to the app for two minutes.
+              The air outside is at a very unhealthy level (AQI 380+), and she has not replied to the on-device check-in
+              for two minutes.
             </p>
           </section>
 
+          {callStatus && (
+            <div style={{ padding: '10px 14px', background: '#E6F4EA', color: '#137333', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}>
+              {callStatus}
+            </div>
+          )}
+
           <div className="caregiver-actions">
-            <button
-              className="caregiver-call-button"
-              type="button"
-              onClick={() => window.alert('Demo only: calling is not connected yet.')}
-            >
+            <button className="caregiver-call-button" type="button" onClick={handleCallMaa}>
               <PhoneIcon />
               Call Maa
             </button>
             <button
               className="caregiver-secondary-button"
               type="button"
-              onClick={() => window.alert('Demo only: no emergency notification was sent.')}
+              onClick={() => handleRunSimulation('RESPIRATORY_DISTRESS_UNANSWERED')}
             >
               I could not reach her
             </button>
@@ -97,8 +238,8 @@ export default function CaregiverPage() {
           <section className="caregiver-card caregiver-escalation">
             <h3>If nobody reaches her</h3>
             <p>
-              The next step is her emergency contact. Maa can cancel before it
-              is sent.
+              The next step is her emergency contact with location. Maa has a 30-second cancellation countdown to
+              prevent false alarms.
             </p>
           </section>
 

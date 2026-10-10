@@ -1,0 +1,19 @@
+{
+  "name": "aethera-infra",
+  "version": "1.0.0",
+  "private": true,
+  "bin": {
+    "aethera-infra": "bin/aethera-stack.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "^2.160.0",
+    "aws-cdk-lib": "^2.160.0",
+    "constructs": "^10.3.0",
+    "typescript": "~5.5.0"
+  }
+}
