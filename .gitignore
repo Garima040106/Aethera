@@ -1,4 +1,4 @@
-# Environment secrets
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
@@ -14,13 +14,27 @@ __pycache__/
 venv/
 
 # Frontend dependencies and build output
+node_modules/
 frontend/node_modules/
+dist/
 frontend/dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
 
 # AWS CDK output
+cdk.out/
 infra/cdk.out/
+
+# Test and coverage output
+coverage/
 
 # Editor and operating system files
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db

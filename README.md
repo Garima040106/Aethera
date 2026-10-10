@@ -119,7 +119,87 @@ cd frontend && npm run build
 ---
 
 ## Repository Structure
+## Repo layout
 
+Aethera is a **web app first**. The companion and caregiver phone experiences are shown as phone previews inside the web app. Folders marked **(exists)** are present in the repository; the rest are planned.
+
+```text
+Aethera/
+├── README.md                          (exists)
+├── LICENSE                            planned
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── ci.yml                     lint and build on every push
+│
+├── frontend/                          (exists) React + TypeScript + Vite
+│   ├── index.html
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── main.tsx
+│       ├── app/                       router and app setup
+│       ├── pages/
+│       │   ├── home/                  landing page
+│       │   ├── dashboard/             forecast, inversion, plume map, agent log
+│       │   ├── companion/             phone preview: Kamla's screen
+│       │   └── caregiver/             phone preview: caregiver's message
+│       ├── components/
+│       │   ├── layout/                header, footer
+│       │   ├── phone/                 phone frame used by the previews
+│       │   └── ui/                    badges, cards, risk bars
+│       ├── data/                      sample data until the API is connected
+│       ├── api/                       client for the backend (GraphQL)
+│       ├── lib/                       helpers: chart scale, AQI categories
+│       └── styles/                    design tokens and global styles
+│
+├── backend/                           planned: Python services on AWS Lambda
+│   ├── ingest/                        CPCB/OpenAQ, NASA FIRMS and weather ingestion
+│   ├── forecast/                      inversion index, coupled models, plume tracker
+│   ├── agents/                        Strands agents on Bedrock
+│   │   ├── air_watcher/
+│   │   ├── health_guardian/
+│   │   ├── care_circle/
+│   │   ├── coordinator/
+│   │   └── advice_library/             safe advice text selected by agents
+│   ├── alerts/                        SNS messages and alert ladder
+│   ├── api/                           GraphQL schema and AppSync resolvers
+│   └── shared/                        shared types and helpers
+│
+├── ml/                                planned: forecast model training and evaluation
+├── tools/
+│   └── vitals-simulator/              planned: sample heart rate and SpO2 readings
+├── infra/                             planned: AWS CDK (TypeScript)
+│   ├── bin/                           app entry
+│   └── lib/
+│       ├── data-stack.ts              S3, DynamoDB, ingestion schedule
+│       ├── forecast-stack.ts           forecast Lambdas, SageMaker
+│       ├── agents-stack.ts              Bedrock, AgentCore, Step Functions, SNS
+│       ├── api-stack.ts                 AppSync, Cognito
+│       ├── iot-stack.ts                 IoT Core rules
+│       └── web-stack.ts                Amplify Hosting, CloudFront, WAF
+└── scripts/                           planned: deployment and local helper scripts
+```
+
+Each service in `backend/` will have its own `handler.py`, `requirements.txt`, and `tests/` directory.
+
+## Run the frontend
+
+The Aethera frontend is a React + TypeScript web application built with Vite.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- npm (included with Node.js)
+- Git
+
+### Setup
+
+Clone the repository and navigate to the frontend directory:
+
+```bash
+git clone <repository-url>
+cd Aethera/frontend
 ```
 Aethera/
 ├── app/                  # FastAPI Backend Application
@@ -157,8 +237,54 @@ Aethera/
 
 ---
 
+Install dependencies:
+
+```bash
+npm install
+```
+
+### Development server
+
+Start the local development server:
+
+```bash
+npm run dev
+```
+
+Open the URL printed in the terminal, usually `http://localhost:5173`.
+
+### Available pages
+
+| Route | Description |
+|---|---|
+| `/` | Aethera landing page |
+| `/dashboard` | Air quality forecast dashboard |
+| `/companion` | On-device health companion UI preview |
+| `/caregiver` | Care Circle caregiver UI preview |
+
+### Production build
+
+Build the frontend for production:
+
+```bash
+npm run build
+```
+
+To preview the production build locally:
+
+```bash
+npm run preview
+```
+
+**Note:** The frontend currently uses sample data and UI previews. Backend integration, live data, and some interactive features are not connected yet. The frontend can be run locally without deploying the AWS infrastructure.
+
+## Team Prometheus
+
 ## Honest Scientific & Medical Disclaimers
 
 1. **Support Tool, Not a Medical Device:** Saans Saathi is a preventive environmental health companion and caregiver awareness tool. In an emergency, call **112**.
 2. **Atmospheric Surrogate:** The 72-hour forecast executes a fast, physically coupled 0D/1D numerical feedback surrogate. It does not claim full 3D WRF-Chem HPC execution.
 3. **Inversion & Plumes:** Inversion strength is computed via ventilation volume ($V_c = \text{PBLH} \times U_{10}$), and plume paths represent forward wind advection trajectories rather than legal source attribution.
+## License
+
+Powered by AWS architecture.
