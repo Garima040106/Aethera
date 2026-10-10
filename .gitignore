@@ -1,0 +1,26 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# AWS CDK output
+infra/cdk.out/
+
+# Editor and operating system files
+.vscode/
+.DS_Store
+Thumbs.db
