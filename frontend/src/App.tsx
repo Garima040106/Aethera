@@ -1,5 +1,6 @@
 
 import './App.css'
+import { NavLink } from 'react-router-dom'
 
 function AetheraMark() {
   return (
@@ -44,20 +45,23 @@ export function Header() {
   return (
     <header className="site-header">
       <nav className="nav container" aria-label="Main navigation">
-        <a className="brand" href="#home" aria-label="Aethera home">
+        <NavLink className="brand" to="/" aria-label="Aethera home">
           <span className="brand-icon">
             <AetheraMark />
           </span>
           <span>Aethera</span>
-        </a>
+        </NavLink>
 
         <div className="nav-links">
-          <a href="#forecast">Forecast</a>
-          <a href="#companion">Companion</a>
-          <a href="#care">Care circle</a>
-          <a className="button button-primary nav-cta" href="#forecast">
+          <NavLink to="/dashboard">Forecast</NavLink>
+          <NavLink to="/companion">Companion</NavLink>
+          <NavLink to="/caregiver">Care circle</NavLink>
+          <NavLink
+            to="/dashboard"
+            className="button button-primary nav-cta"
+          >
             Open dashboard
-          </a>
+          </NavLink>
         </div>
       </nav>
     </header>
@@ -118,12 +122,12 @@ function Hero() {
         </p>
 
         <div className="hero-actions">
-          <a className="button button-primary" href="#forecast">
+          <NavLink className="button button-primary" to="/dashboard">
             Open the dashboard
-          </a>
-          <a className="button button-secondary" href="#companion">
+          </NavLink>
+          <NavLink className="button button-secondary" to="/companion">
             See the phone app
-          </a>
+          </NavLink>
         </div>
 
         <p className="disclaimer">
@@ -192,9 +196,9 @@ function ForecastSection() {
             The dashboard shows inversion strength, the path of each fire plume
             and when it arrives, with the source and age of every number.
           </p>
-          <a className="text-link" href="#forecast">
+          <NavLink className="text-link" to="/dashboard">
             Explore the forecast <span aria-hidden="true">→</span>
-          </a>
+          </NavLink>
         </div>
 
         <div className="feature-visual">
@@ -215,7 +219,7 @@ function RiskPreview() {
   return (
     <article className="risk-card">
       <div className="preview-heading">
-        <strong>Today&apos;s risk</strong>
+        <strong>Today's risk</strong>
         <span className="sample-badge">Sample data</span>
       </div>
 
@@ -273,9 +277,9 @@ function CompanionSection() {
             when the user turns sharing on. Alerts are in Hindi or English and
             can be read aloud.
           </p>
-          <a className="text-link" href="#companion">
+          <NavLink className="text-link" to="/companion">
             Explore the companion <span aria-hidden="true">→</span>
-          </a>
+          </NavLink>
         </div>
       </div>
     </section>
@@ -319,9 +323,9 @@ function CareSection() {
             Every decision is logged, so anyone can open “Why did I get this
             alert?” and see the steps.
           </p>
-          <a className="text-link" href="#care">
+          <NavLink className="text-link" to="/caregiver">
             Explore the care circle <span aria-hidden="true">→</span>
-          </a>
+          </NavLink>
         </div>
 
         <div className="feature-visual">
@@ -330,7 +334,9 @@ function CareSection() {
               <div className="care-step" key={step.title}>
                 <div className="care-step-marker">
                   <span
-                    className={step.danger ? 'step-number step-danger' : 'step-number'}
+                    className={
+                      step.danger ? 'step-number step-danger' : 'step-number'
+                    }
                   >
                     {index + 1}
                   </span>
@@ -356,7 +362,9 @@ export function Footer() {
     <footer className="site-footer container">
       <div>
         <strong>Aethera · Team Prometheus</strong>
-        <p>Built for Environmental Hacks, Air track. Powered by AWS architecture.</p>
+        <p>
+          Built for Environmental Hacks, Air track. Powered by AWS architecture.
+        </p>
       </div>
       <p className="footer-disclaimer">
         Support tool, not a medical device. Values on these screens are sample
@@ -365,7 +373,6 @@ export function Footer() {
     </footer>
   )
 }
-
 
 export default function App() {
   return (
@@ -377,5 +384,3 @@ export default function App() {
     </main>
   )
 }
-
-

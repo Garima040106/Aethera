@@ -1,0 +1,253 @@
+
+.caregiver-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  align-items: start;
+  gap: 48px;
+  color: #3c4043;
+}
+
+.caregiver-intro {
+  padding-top: 32px;
+}
+
+.caregiver-intro h1 {
+  margin: 12px 0 16px;
+  color: #202124;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+.caregiver-intro > p {
+  color: #5f6368;
+  line-height: 1.7;
+}
+
+.caregiver-disclaimer {
+  margin-top: 24px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-left: 3px solid #1a73e8;
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+}
+
+.caregiver-phone {
+  width: 390px;
+  max-width: 100%;
+  height: 844px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  background: #f8f9fa;
+  color: #3c4043;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  box-shadow: 0 8px 32px rgb(32 33 36 / 10%);
+}
+
+.caregiver-phone-header {
+  flex: 0 0 auto;
+  background: #fff;
+  border-bottom: 1px solid #dadce0;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.caregiver-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #202124;
+  font-size: 18px;
+}
+
+.caregiver-phone-header > span {
+  font-size: 13px;
+  color: #5f6368;
+}
+
+.caregiver-phone-content {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.caregiver-card {
+  flex: 0 0 auto;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.caregiver-alert {
+  border-left: 4px solid #c5221f;
+}
+
+.caregiver-alert-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.caregiver-alert-meta strong {
+  font-size: 13px;
+  color: #c5221f;
+}
+
+.caregiver-alert-meta span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #5f6368;
+}
+
+.caregiver-alert h2 {
+  margin: 0;
+  color: #202124;
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.caregiver-alert p,
+.caregiver-escalation p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.caregiver-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caregiver-call-button,
+.caregiver-secondary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.caregiver-call-button {
+  background: #1a73e8;
+  color: #fff;
+  border: 1px solid #1a73e8;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.caregiver-secondary-button {
+  background: #fff;
+  color: #1a73e8;
+  border: 1.5px solid #dadce0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.caregiver-sharing {
+  gap: 2px;
+}
+
+.caregiver-sharing h3,
+.caregiver-escalation h3 {
+  margin: 0;
+  padding-bottom: 6px;
+  color: #202124;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.caregiver-sharing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid #f1f3f4;
+  font-size: 12px;
+}
+
+.sharing-status {
+  text-align: right;
+  font-weight: 500;
+}
+
+.sharing-status.shared {
+  color: #137333;
+}
+
+.sharing-status.private {
+  color: #5f6368;
+}
+
+.caregiver-escalation {
+  gap: 4px;
+}
+
+.caregiver-emergency-note {
+  flex: 0 0 auto;
+  margin: 0;
+  color: #5f6368;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .caregiver-page {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 24px;
+    padding: 32px 16px 48px;
+  }
+
+  .caregiver-intro {
+    width: 100%;
+    max-width: 560px;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .caregiver-phone {
+    width: 100%;
+    border-radius: 12px;
+  }
+
+  .caregiver-phone-content {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .caregiver-card {
+    padding: 12px;
+  }
+}
