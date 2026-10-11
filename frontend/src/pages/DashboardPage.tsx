@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRightIcon,
   HeartPulseIcon,
-  LockIcon,
   MapPinIcon,
   RouteIcon,
   ShieldAlertIcon,
   WindIcon,
 } from '../components/Icons'
 import { api } from '../services/api'
-import type { DecisionRecord, ForecastResponse, InversionResponse, PlumeResponse } from '../services/api'
+import type { ForecastResponse } from '../services/api'
 import { getDemoUser } from '../services/demoAuth'
 
 const AREA_OPTIONS = [
@@ -38,39 +38,18 @@ function getNextStep(aqi: number | undefined) {
   return 'Avoid strenuous outdoor activity today. Keep windows closed when outside air is poor.'
 }
 
-function ForecastChart({ forecast }: { forecast: ForecastResponse }) {
-  const points = forecast.points ?? []
-  if (points.length === 0) return <p>No forecast points are available yet.</p>
-
-  const chartPoints = points.map((point) => {
-    const x = 42 + (point.hour / 72) * 638
-    const y = 230 - (Math.min(500, Math.max(0, point.aqi_coupled)) / 500) * 190
-    return `${x},${y}`
-  }).join(' ')
-
-  return (
-    <svg viewBox="0 0 700 270" className="elder-forecast-chart" role="img" aria-label={`72-hour air quality forecast for ${forecast.area}`}>
-      {[40, 88, 136, 184, 230].map((y) => <line key={y} x1="42" y1={y} x2="680" y2={y} stroke="#e8e5dc" />)}
-      <polyline points={chartPoints} fill="none" stroke="#52674f" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round" />
-      <g fill="#5f625b" fontSize="12" textAnchor="middle">
-        {['Now', '+12 hours', '+24 hours', '+36 hours', '+48 hours', '+60 hours', '+72 hours'].map((label, index) => (
-          <text key={label} x={42 + index * 106.3} y="255">{label}</text>
-        ))}
-      </g>
-    </svg>
-  )
-}
-
 export default function DashboardPage() {
   const { t } = useTranslation()
   const [selectedArea, setSelectedArea] = useState('noida')
   const [forecast, setForecast] = useState<ForecastResponse | null>(null)
-  const [inversion, setInversion] = useState<InversionResponse | null>(null)
-  const [plumes, setPlumes] = useState<PlumeResponse | null>(null)
-  const [decisions, setDecisions] = useState<DecisionRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshCount, setRefreshCount] = useState(0)
+  const [showFamilyForm, setShowFamilyForm] = useState(false)
+  const [familyName, setFamilyName] = useState('')
+  const [familyContact, setFamilyContact] = useState('')
+  const [familyMembers, setFamilyMembers] = useState<string[]>([])
+  const [alertStatus, setAlertStatus] = useState<string | null>(null)
   const user = getDemoUser()
 
   useEffect(() => {
@@ -79,17 +58,9 @@ export default function DashboardPage() {
       setLoading(true)
       setError(null)
       try {
-        const [forecastData, inversionData, plumeData, decisionData] = await Promise.all([
-          api.getForecast(selectedArea),
-          api.getInversion(selectedArea),
-          api.getPlumes(selectedArea),
-          api.getDecisions(),
-        ])
+        const forecastData = await api.getForecast(selectedArea)
         if (!isMounted) return
         setForecast(forecastData)
-        setInversion(inversionData)
-        setPlumes(plumeData)
-        setDecisions(decisionData.decisions ?? [])
       } catch (reason: unknown) {
         if (!isMounted) return
         setError(reason instanceof Error ? reason.message : 'Could not load air quality information.')
@@ -105,18 +76,32 @@ export default function DashboardPage() {
   const airStatus = getAirStatus(aqi, forecast?.summary.category_now)
   const nextStep = getNextStep(aqi)
   const firstName = user?.name.split(' ')[0] || 'there'
+  const greenWindows = forecast?.points
+    .filter((point) => point.aqi_coupled <= 100)
+    .slice(0, 3)
+    .map((point) => new Date(point.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) ?? []
+
+  function addFamilyMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!familyName.trim() || !familyContact.trim()) return
+    setFamilyMembers((members) => [...members, familyName.trim()])
+    setFamilyName('')
+    setFamilyContact('')
+    setShowFamilyForm(false)
+    setAlertStatus(`${familyName.trim()} was added to your alert circle.`)
+  }
 
   return (
     <main className="elder-dashboard min-w-0 overflow-y-auto px-4 py-6 sm:px-7 sm:py-8 lg:px-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-10 sm:gap-8">
         <header className="elder-dashboard-header">
           <div>
-            <p className="elder-eyebrow">Your daily air check</p>
+            <p className="elder-eyebrow">A simple check for today</p>
             <h1 className="mt-2">Good day, {firstName}.</h1>
-            <p className="mt-2 text-lg leading-7 text-[#62635c]">Here is a simple look at the air around you.</p>
+            <p className="mt-2 text-lg leading-7 text-[#62635c]">See the air, decide what feels right, and get on with your day.</p>
           </div>
           <label className="elder-location-picker">
-            <span><MapPinIcon size={20} /> Choose your area</span>
+            <span><MapPinIcon size={20} /> I am checking</span>
             <select value={selectedArea} onChange={(event) => setSelectedArea(event.target.value)}>
               {AREA_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
             </select>
@@ -155,78 +140,88 @@ export default function DashboardPage() {
 
         <section className="elder-quick-actions" aria-labelledby="quick-actions-heading">
           <div>
-            <p className="elder-eyebrow">Help and tools</p>
-            <h2 id="quick-actions-heading">What would you like to do?</h2>
+            <p className="elder-eyebrow">If you need a hand</p>
+            <h2 id="quick-actions-heading">Quick help</h2>
           </div>
           <div className="elder-action-grid">
             <Link to="/companion" className="elder-action-card elder-action-card-sage">
               <span className="elder-action-icon"><HeartPulseIcon size={27} /></span>
-              <span><strong>Check how I feel</strong><small>Open your personal companion</small></span>
+              <span><strong>Check how I feel</strong><small>Talk through how you are feeling</small></span>
               <ArrowRightIcon size={21} />
             </Link>
             <Link to="/caregiver-login" className="elder-action-card elder-action-card-sand">
               <span className="elder-action-icon"><ShieldAlertIcon size={27} /></span>
-              <span><strong>Contact my care circle</strong><small>See trusted people and support</small></span>
+              <span><strong>Contact my care circle</strong><small>Reach someone you trust</small></span>
               <ArrowRightIcon size={21} />
             </Link>
             <Link to="/routes" className="elder-action-card elder-action-card-sky">
               <span className="elder-action-icon"><RouteIcon size={27} /></span>
-              <span><strong>Plan a route</strong><small>Compare routes around the city</small></span>
+              <span><strong>Plan a route</strong><small>Find a more comfortable way out</small></span>
               <ArrowRightIcon size={21} />
             </Link>
+            <button type="button" className="elder-action-card elder-action-card-family" onClick={() => setShowFamilyForm(true)}>
+              <span className="elder-action-icon"><span className="elder-plus-icon" aria-hidden="true">+</span></span>
+              <span><strong>Add family or friend</strong><small>Choose who should receive alerts</small></span>
+              <ArrowRightIcon size={21} />
+            </button>
           </div>
         </section>
 
-        <section className="elder-summary-grid" aria-label="Today's forecast summary">
-          <article className="elder-summary-card">
-            <p className="elder-eyebrow">Later today</p>
-            <h2>{forecast ? `${forecast.summary.peak_category} conditions expected` : loading ? 'Forecast is loading' : 'Forecast unavailable'}</h2>
-            <p>{forecast ? `Air quality may be highest in about ${forecast.summary.peak_hour} hours. Plan outdoor activities for a time that feels comfortable.` : 'We will show the forecast here when it is available.'}</p>
-          </article>
-          <article className="elder-summary-card elder-summary-card-sand">
-            <p className="elder-eyebrow">Weather and air</p>
-            <h2>{inversion?.inversion_status_now || (loading ? 'Checking conditions' : 'No update yet')}</h2>
-            <p>{inversion ? `Still air may hold pollution near the ground. Forecast window: ${inversion.peak_inversion_window}.` : 'We are checking whether weather may keep pollution near the ground.'}</p>
-          </article>
-          <article className="elder-summary-card elder-summary-card-sage">
-            <p className="elder-eyebrow">Smoke activity</p>
-            <h2>{plumes ? `${plumes.fire_count_upwind} upwind hotspots` : loading ? 'Checking activity' : 'No update yet'}</h2>
-            <p>{plumes ? `Wind is from the ${plumes.wind_direction_cardinal}. Estimated plume arrival: about ${plumes.estimated_arrival_hours} hours.` : 'We are checking for reported upwind fire activity.'}</p>
-          </article>
+        <section className="elder-corridor-card" aria-labelledby="green-corridors-heading">
+          <div className="elder-corridor-heading">
+            <div>
+              <p className="elder-eyebrow">Plan ahead</p>
+              <h2 id="green-corridors-heading">Better times to go out</h2>
+            </div>
+            <span className="elder-corridor-badge">Next 72 hours</span>
+          </div>
+          <p className="elder-corridor-copy">These are the clearest forecast hours for your area. Check again before leaving.</p>
+          <div className="elder-corridor-times">
+            {(greenWindows.length > 0 ? greenWindows : ['Checking now']).map((time) => (
+              <span key={time}>{time}</span>
+            ))}
+          </div>
         </section>
 
-        <details className="elder-details">
-          <summary>Show detailed air forecast and data</summary>
-          {forecast && (
-            <div className="elder-details-content">
-              <div>
-                <h2>Air quality over the next 72 hours</h2>
-                <p>Use this chart as a forecast guide. Conditions can change.</p>
-                <div className="elder-chart-scroll"><ForecastChart forecast={forecast} /></div>
-              </div>
-              <div className="elder-data-note">
-                <LockIcon size={19} />
-                <p>Your personal health readings stay on your device. The air report uses environmental data and forecasts.</p>
-              </div>
-              {decisions.length > 0 && (
-                <div>
-                  <h2>Recent report updates</h2>
-                  <ul className="elder-decision-list">
-                    {decisions.slice(0, 3).map((decision) => (
-                      <li key={decision.id}>
-                        <strong>{decision.title}</strong>
-                        <span>{decision.agent} · {decision.time}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+        {familyMembers.length > 0 && (
+          <section className="elder-family-card" aria-label="Alert circle">
+            <div>
+              <p className="elder-eyebrow">My alert circle</p>
+              <p className="elder-family-names">{familyMembers.join(', ')}</p>
             </div>
-          )}
-        </details>
+            <button type="button" onClick={() => setAlertStatus('Your alert circle has been notified.')}>Send an air alert</button>
+          </section>
+        )}
 
-        <p className="elder-disclaimer">{t('dashboard.disclaimer')} This information helps with planning and is not medical advice.</p>
+        {alertStatus && <p className="elder-alert-status" role="status">{alertStatus}</p>}
+
+        <section className="elder-simple-note" aria-label="Helpful reminder">
+          <span className="elder-simple-note-mark" aria-hidden="true">✓</span>
+          <div>
+            <strong>That is all you need for now.</strong>
+            <p>Check again before you go out. The air can change during the day.</p>
+          </div>
+        </section>
+
+        <p className="elder-disclaimer">{t('dashboard.disclaimer')} This is guidance for planning, not medical advice.</p>
       </div>
+      {showFamilyForm && (
+        <div className="elder-modal-backdrop" role="presentation" onClick={() => setShowFamilyForm(false)}>
+          <section className="elder-family-modal" role="dialog" aria-modal="true" aria-labelledby="family-modal-title" onClick={(event) => event.stopPropagation()}>
+            <p className="elder-eyebrow">Your alert circle</p>
+            <h2 id="family-modal-title">Add someone you trust</h2>
+            <p>They can receive a simple air-quality alert from you.</p>
+            <form onSubmit={addFamilyMember}>
+              <label>Name<input value={familyName} onChange={(event) => setFamilyName(event.target.value)} autoFocus required /></label>
+              <label>Phone or email<input value={familyContact} onChange={(event) => setFamilyContact(event.target.value)} required /></label>
+              <div className="elder-modal-actions">
+                <button type="button" onClick={() => setShowFamilyForm(false)}>Cancel</button>
+                <button type="submit">Add to my circle</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

@@ -101,7 +101,7 @@ export default function RoutePlannerPage() {
   }
 
   return (
-    <main className="min-w-0 overflow-y-auto bg-[#f5f8f5] px-4 py-6 sm:px-7 lg:px-9">
+    <main className="route-page min-w-0 overflow-y-auto bg-[#f5f8f5] px-4 py-6 sm:px-7 lg:px-9">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-5 pb-8">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#548066]">Delhi NCR · journey planning</p>
