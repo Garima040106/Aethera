@@ -9,6 +9,7 @@ import DashboardPage from '../pages/DashboardPage'
 import CompanionPage from '../pages/CompanionPage'
 import CaregiverPage from '../pages/CaregiverPage'
 import RoutePlannerPage from '../pages/RoutePlannerPage'
+import AqiMapRoute from '../pages/AqiMapRoute'
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,15 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginChoicePage /> },
   { path: '/elder-login', element: <LoginPage role="elder" /> },
   { path: '/caregiver-login', element: <LoginPage role="caregiver" /> },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <SiteLayout />,
+        children: [{ path: '/air-map', element: <AqiMapRoute /> }],
+      },
+    ],
+  },
   {
     element: <ProtectedRoute role="elder" />,
     children: [

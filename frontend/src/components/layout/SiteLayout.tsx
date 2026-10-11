@@ -102,6 +102,14 @@ export default function SiteLayout() {
         <div className="nav-section">
           <span className="nav-section-label">Navigation</span>
           <NavLink
+            to="/air-map"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+          >
+            <MapPinIcon size={18} />
+            <span>Delhi AQI map</span>
+          </NavLink>
+          <NavLink
             to={dashboardPath}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setSidebarOpen(false)}

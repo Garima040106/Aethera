@@ -17,6 +17,10 @@ export const areaQuerySchema = z.object({
   area: z.string().default('noida'),
 })
 
+export const placeSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(160),
+})
+
 export const healthEventSchema = z.object({
   user_id: z.string().default('kamla_noida'),
   consent_given: z.boolean().default(true),

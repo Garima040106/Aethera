@@ -15,8 +15,11 @@
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.850.0",
-    "@aws-sdk/client-dynamodb": "^3.850.0",
-    "@aws-sdk/lib-dynamodb": "^3.850.0",
+    "@aws-sdk/client-dynamodb": "^3.1149.0",
+    "@aws-sdk/client-geo-places": "^3.1149.0",
+    "@aws-sdk/client-geo-routes": "^3.1149.0",
+    "@aws-sdk/client-location": "^3.1149.0",
+    "@aws-sdk/lib-dynamodb": "^3.1149.0",
     "@codegenie/serverless-express": "^4.17.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

@@ -1,8 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mockClient } from 'aws-sdk-client-mock'
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb'
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { DynamoDBAlertRepository, DynamoDBDecisionRepository, DynamoDBEnvironmentalRepository, PersistenceError } from '../aws/dynamodb-repositories.js'
+import {
+  deleteRecord,
+  DynamoDBInputError,
+  DynamoDBRecordNotFoundError,
+  getRecord,
+  putRecord,
+  updateRecord,
+} from '../config/dynamodb.js'
 import { InMemoryAlertRepository, InMemoryDecisionRepository, InMemoryEnvironmentalRepository } from '../repositories/in-memory.js'
 import { createRepositories } from '../aws/repositories.js'
 
@@ -67,20 +75,20 @@ describe('persistence repositories', () => {
     }).mode).toBe('dynamodb')
   })
 
-  it('writes and reads alerts using the shared pk/sk table schema', async () => {
+  it('writes and reads alerts using the shared PK/SK table schema', async () => {
     const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }))
     const repo = new DynamoDBAlertRepository(client, 'AtheraEnvironmentalData')
     ddbMock.on(PutCommand).resolves({})
-    ddbMock.on(GetCommand).resolves({ Item: { pk: 'ALERT#evt-1', sk: 't1', recordType: 'ALERT', eventId: 'evt-1', timestamp: 't1', status: 'ACCEPTED', ttl: 123 } })
+    ddbMock.on(GetCommand).resolves({ Item: { PK: 'ALERT#evt-1', SK: 't1', recordType: 'ALERT', eventId: 'evt-1', timestamp: 't1', status: 'ACCEPTED', ttl: 123 } })
 
     const record = { eventId: 'evt-1', timestamp: 't1', status: 'ACCEPTED', ttl: 123 }
     await repo.put(record)
     expect(await repo.get('evt-1', 't1')).toEqual(record)
     expect(ddbMock.commandCalls(PutCommand)[0]?.args[0].input).toMatchObject({
       TableName: 'AtheraEnvironmentalData',
-      Item: { pk: 'ALERT#evt-1', sk: 't1', recordType: 'ALERT', ...record },
+      Item: { PK: 'ALERT#evt-1', SK: 't1', recordType: 'ALERT', ...record },
     })
-    expect(ddbMock.commandCalls(GetCommand)[0]?.args[0].input.Key).toEqual({ pk: 'ALERT#evt-1', sk: 't1' })
+    expect(ddbMock.commandCalls(GetCommand)[0]?.args[0].input.Key).toEqual({ PK: 'ALERT#evt-1', SK: 't1' })
   })
 
   it('stores redacted decisions in the shared table and queries recent items', async () => {
@@ -101,14 +109,16 @@ describe('persistence repositories', () => {
     expect(ddbMock.commandCalls(PutCommand)[0]?.args[0].input.Item?.decisionId).toBe('dec-1')
     expect(await repo.listRecent(10)).toEqual([item])
     expect(ddbMock.commandCalls(PutCommand)[0]?.args[0].input.Item).toMatchObject({
-      pk: 'DECISION',
-      sk: `${item.createdAt}#${item.decisionId}`,
+      PK: 'DECISION',
+      SK: `${item.createdAt}#${item.decisionId}`,
       recordType: 'DECISION',
     })
     expect(ddbMock.commandCalls(QueryCommand)[0]?.args[0].input).toMatchObject({
       TableName: 'AtheraEnvironmentalData',
-      KeyConditionExpression: 'pk = :pk',
+      KeyConditionExpression: '#pk = :pk',
+      ExpressionAttributeNames: { '#pk': 'PK', '#agent': 'agent' },
       ExpressionAttributeValues: { ':pk': 'DECISION' },
+      ProjectionExpression: '#decisionId, #createdAt, #agent, #title, #detail, #evidenceSource, #riskLevel',
       ScanIndexForward: false,
       Limit: 10,
     })
@@ -119,7 +129,7 @@ describe('persistence repositories', () => {
     await expect(repo.listRecent(10)).rejects.toBeInstanceOf(PersistenceError)
   })
 
-  it('writes and queries forecast history using the shared pk/sk table schema', async () => {
+  it('writes and queries forecast history using the shared PK/SK table schema', async () => {
     const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }))
     const repo = new DynamoDBEnvironmentalRepository(client, 'AtheraEnvironmentalData')
     const forecast = {
@@ -151,17 +161,66 @@ describe('persistence repositories', () => {
     expect(ddbMock.commandCalls(PutCommand)[0]?.args[0].input).toMatchObject({
       TableName: 'AtheraEnvironmentalData',
       Item: {
-        pk: 'ENVIRONMENT#noida',
-        sk: `FORECAST#${forecast.generated_at}`,
+        PK: 'ENVIRONMENT#noida',
+        SK: `FORECAST#${forecast.generated_at}`,
         recordType: 'ENVIRONMENTAL_FORECAST',
         forecast,
       },
     })
     expect(ddbMock.commandCalls(QueryCommand)[0]?.args[0].input).toMatchObject({
-      KeyConditionExpression: 'pk = :pk AND begins_with(sk, :skPrefix)',
+      KeyConditionExpression: '#pk = :pk AND begins_with(#sk, :skPrefix)',
+      ExpressionAttributeNames: { '#pk': 'PK', '#sk': 'SK' },
       ExpressionAttributeValues: { ':pk': 'ENVIRONMENT#noida', ':skPrefix': 'FORECAST#' },
       ScanIndexForward: false,
       Limit: 5,
     })
+  })
+
+  it('provides validated reusable Put, Get, Update, and Delete operations', async () => {
+    const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }))
+    const tableName = 'AtheraEnvironmentalData'
+    const key = { PK: 'ALERT#evt-crud', SK: '2026-10-11T00:00:00.000Z' }
+    const item = { ...key, status: 'ACCEPTED', detail: { source: 'test' } }
+    ddbMock.on(PutCommand).resolves({})
+    ddbMock.on(GetCommand).resolves({ Item: item })
+    ddbMock.on(UpdateCommand).resolves({ Attributes: { ...item, status: 'RESOLVED' } })
+    ddbMock.on(DeleteCommand).resolves({ Attributes: item })
+
+    await putRecord(tableName, item, client)
+    expect(await getRecord<typeof item>(tableName, key, client)).toEqual(item)
+    expect(await updateRecord<typeof item>(tableName, key, { status: 'RESOLVED' }, client)).toEqual({
+      ...item,
+      status: 'RESOLVED',
+    })
+    expect(await deleteRecord<typeof item>(tableName, key, client)).toEqual(item)
+    expect(ddbMock.commandCalls(PutCommand)).toHaveLength(1)
+    expect(ddbMock.commandCalls(GetCommand)[0]?.args[0].input.Key).toEqual(key)
+    expect(ddbMock.commandCalls(UpdateCommand)[0]?.args[0].input).toMatchObject({
+      TableName: tableName,
+      Key: key,
+      UpdateExpression: 'SET #field0 = :value0',
+      ExpressionAttributeNames: { '#field0': 'status' },
+      ExpressionAttributeValues: { ':value0': 'RESOLVED' },
+      ReturnValues: 'ALL_NEW',
+    })
+    expect(ddbMock.commandCalls(DeleteCommand)[0]?.args[0].input).toMatchObject({
+      TableName: tableName,
+      Key: key,
+      ReturnValues: 'ALL_OLD',
+    })
+
+    await expect(updateRecord(tableName, key, {}, client)).rejects.toBeInstanceOf(DynamoDBInputError)
+    await expect(updateRecord(tableName, key, { PK: 'different' }, client)).rejects.toBeInstanceOf(DynamoDBInputError)
+    await expect(getRecord(tableName, { PK: '', SK: 'missing' }, client)).rejects.toBeInstanceOf(DynamoDBInputError)
+  })
+
+  it('reports an update of a missing record instead of silently creating it', async () => {
+    const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: 'us-east-1' }))
+    ddbMock.on(UpdateCommand).rejects(Object.assign(new Error('conditional check failed'), {
+      name: 'ConditionalCheckFailedException',
+    }))
+
+    await expect(updateRecord('AtheraEnvironmentalData', { PK: 'MISSING', SK: 'MISSING' }, { status: 'UPDATED' }, client))
+      .rejects.toBeInstanceOf(DynamoDBRecordNotFoundError)
   })
 })

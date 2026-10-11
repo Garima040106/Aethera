@@ -1,5 +1,5 @@
 {
-  "app": "node bin/aethera-stack.js",
+  "app": "node dist/bin/aethera-stack.js",
   "watch": {
     "include": ["**"],
     "exclude": [
@@ -14,7 +14,6 @@
     ]
   },
   "context": {
-    "@aws-cdk/core:enableStackNameDuplicates": "true",
     "aws-cdk:enableDiffNoFail": "true",
     "@aws-cdk/core:stackRelativeExports": "true"
   }

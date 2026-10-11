@@ -22,7 +22,8 @@ browser session.
 
 ## Amazon Location routes
 
-The protected **Clean Routes** page uses Amazon Location Routes v2. It reads the API key from
+The older-adult dashboard embeds the route planner, which is also available on the protected
+**Clean Routes** page. It uses Amazon Location Routes v2 and reads the API key from
 `AMAZON_LOCATION` in `frontend/.env.local` and uses `us-east-1` unless `VITE_AWS_REGION` overrides
 it. Restart Vite after changing either value. The Routes v2 API-key flow does not require a Route
 Calculator name. The key is sent to Amazon Location from the browser, so restrict it in AWS to the
@@ -35,6 +36,26 @@ that accepts `POST { "geometry": { "type": "LineString", "coordinates": [[longit
 and returns `{ "average_aqi": number, "is_green_corridor": boolean, "source": string, "observed_at": string }`.
 The UI only shows a green-corridor badge when that backend returns the explicit classification and
 score; otherwise it shows Amazon's route time and distance without implying cleaner air.
+
+## Delhi AQI map
+
+The authenticated **Delhi AQI map** page uses MapLibre GL JS with an existing Amazon Location map
+resource. Set `AWS_LOCATION_MAP_NAME` in `frontend/.env.local` to that map's name in the configured
+region; `AMAZON_LOCATION` remains the browser-safe Amazon Location API key. The map key is included
+in the frontend bundle by design, so restrict it to the app's web origins and map-rendering
+operations. The map resource must already exist and the key must permit its style and tile requests.
+Place search is proxied through the backend and uses AWS SDK credentials: the local AWS CLI profile
+chain or the Lambda execution role. Do not put AWS secret access keys in frontend variables.
+
+The AQI station endpoint (`GET /api/aqi/stations`) uses the CPCB real-time data.gov.in resource.
+Set `DATA_GOV_IN_API_KEY` in `backend/.env.local`; optionally set `CPCB_AQI_RESOURCE_ID` to override
+the resource identifier. Records without valid coordinates or enough pollutant observations for an
+Indian CPCB AQI are omitted. An explicit unavailable response is shown when the token is missing or
+the feed contains no usable data; no station readings or boundary are fabricated. The map resource
+name and available styles could not be enumerated with the current AWS profile, so the page expects
+an existing map name and uses that resource's default style.
+Vite explicitly exposes only the API base URL, route-score URL, Amazon Location browser key, map
+name, and region; unrelated `VITE_` variables such as Bedrock bearer tokens are not bundled.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

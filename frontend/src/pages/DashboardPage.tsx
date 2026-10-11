@@ -13,6 +13,7 @@ import {
 import { api } from '../services/api'
 import type { DecisionRecord, ForecastResponse, InversionResponse, PlumeResponse } from '../services/api'
 import { getDemoUser } from '../services/demoAuth'
+import RoutePlannerPage from './RoutePlannerPage'
 
 const AREA_OPTIONS = [
   { id: 'noida', label: 'Noida Sector 62' },
@@ -176,6 +177,8 @@ export default function DashboardPage() {
             </Link>
           </div>
         </section>
+
+        <RoutePlannerPage embedded />
 
         <section className="elder-summary-grid" aria-label="Today's forecast summary">
           <article className="elder-summary-card">

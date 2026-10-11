@@ -111,6 +111,84 @@ export interface DecisionRecord {
   redacted: boolean
 }
 
+export interface AqiStation {
+  id: string
+  name: string
+  locality?: string
+  latitude: number
+  longitude: number
+  aqi: number
+  aqi_system: 'INDIA_CPCB'
+  pm25?: number
+  pm10?: number
+  pollutants?: Record<string, { value: number; unit: string }>
+  estimated?: boolean
+  observed_at: string
+  source: string
+}
+
+export interface AqiStationsResponse {
+  status: 'available' | 'unavailable' | 'stale'
+  updated_at: string | null
+  source: string | null
+  stations: AqiStation[]
+  detail?: string
+}
+
+export interface PlaceSearchResult {
+  id: string
+  label: string
+  address: string
+  longitude: number
+  latitude: number
+}
+
+function isAqiStation(value: unknown): value is AqiStation {
+  if (typeof value !== 'object' || value === null) return false
+  const station = value as Partial<AqiStation>
+  return (
+    typeof station.id === 'string'
+    && station.id.length > 0
+    && typeof station.name === 'string'
+    && typeof station.latitude === 'number'
+    && Number.isFinite(station.latitude)
+    && station.latitude >= -90
+    && station.latitude <= 90
+    && typeof station.longitude === 'number'
+    && Number.isFinite(station.longitude)
+    && station.longitude >= -180
+    && station.longitude <= 180
+    && typeof station.aqi === 'number'
+    && Number.isFinite(station.aqi)
+    && station.aqi >= 0
+    && station.aqi <= 500
+    && station.aqi_system === 'INDIA_CPCB'
+    && typeof station.observed_at === 'string'
+    && Number.isFinite(Date.parse(station.observed_at))
+    && typeof station.source === 'string'
+    && station.source.length > 0
+    && (station.pm25 === undefined || (typeof station.pm25 === 'number' && Number.isFinite(station.pm25) && station.pm25 >= 0))
+    && (station.pm10 === undefined || (typeof station.pm10 === 'number' && Number.isFinite(station.pm10) && station.pm10 >= 0))
+    && (station.estimated === undefined || typeof station.estimated === 'boolean')
+    && (
+      station.pollutants === undefined
+      || (
+        typeof station.pollutants === 'object'
+        && station.pollutants !== null
+        && Object.values(station.pollutants).every((reading) =>
+          typeof reading === 'object'
+          && reading !== null
+          && typeof reading.value === 'number'
+          && Number.isFinite(reading.value)
+          && reading.value >= 0
+          && typeof reading.unit === 'string'
+          && reading.unit.length > 0,
+        )
+      )
+    )
+  )
+}
+
 export interface DecisionsResponse {
   decisions: DecisionRecord[]
   total_count: number
@@ -199,6 +277,36 @@ export const api = {
 
   async getDecisions(): Promise<DecisionsResponse> {
     return fetchWithFallback<DecisionsResponse>('/api/decisions', 'decisions')
+  },
+
+  async getAqiStations(signal?: AbortSignal): Promise<AqiStationsResponse> {
+    const response = await fetch(`${BASE_URL}/api/aqi/stations`, signal ? { signal } : {})
+    if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`)
+    const data: unknown = await response.json()
+    if (typeof data !== 'object' || data === null || !('status' in data) || !('stations' in data)) {
+      throw new Error('AQI station service returned an invalid response.')
+    }
+    const payload = data as Partial<AqiStationsResponse>
+    if (!['available', 'unavailable', 'stale'].includes(payload.status ?? '') || !Array.isArray(payload.stations)) {
+      throw new Error('AQI station service returned an invalid response.')
+    }
+    return {
+      status: payload.status as AqiStationsResponse['status'],
+      updated_at: typeof payload.updated_at === 'string' ? payload.updated_at : null,
+      source: typeof payload.source === 'string' ? payload.source : null,
+      stations: payload.stations.filter(isAqiStation),
+      ...(typeof payload.detail === 'string' ? { detail: payload.detail } : {}),
+    }
+  },
+
+  async searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceSearchResult[]> {
+    const response = await fetch(
+      `${BASE_URL}/api/location/search?q=${encodeURIComponent(query)}`,
+      signal ? { signal } : {},
+    )
+    if (!response.ok) throw new Error(`Place search returned HTTP ${response.status}`)
+    const data = await response.json() as { results?: PlaceSearchResult[] }
+    return Array.isArray(data.results) ? data.results : []
   },
 
   async getAgentStatus() {

@@ -61,7 +61,7 @@ function RoutePreview({ route, green }: { route: LocationRoute; green: boolean }
   )
 }
 
-export default function RoutePlannerPage() {
+export default function RoutePlannerPage({ embedded = false }: { embedded?: boolean }) {
   const [originIndex, setOriginIndex] = useState(0)
   const [destinationIndex, setDestinationIndex] = useState(1)
   const [routes, setRoutes] = useState<LocationRoute[]>([])
@@ -100,12 +100,15 @@ export default function RoutePlannerPage() {
     }
   }
 
-  return (
-    <main className="min-w-0 overflow-y-auto bg-[#f5f8f5] px-4 py-6 sm:px-7 lg:px-9">
-      <div className="mx-auto flex max-w-[1100px] flex-col gap-5 pb-8">
+  const plannerContent = (
+    <div className="mx-auto flex max-w-[1100px] flex-col gap-5 pb-8">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#548066]">Delhi NCR · journey planning</p>
-          <h1 className="font-display mt-2 text-4xl font-semibold tracking-[-.03em] text-[#17231c] sm:text-5xl">Find a better way through the city.</h1>
+          {embedded ? (
+            <h2 id="route-planner-heading" className="font-display mt-2 text-3xl font-semibold tracking-[-.03em] text-[#17231c] sm:text-4xl">Find a better way through the city.</h2>
+          ) : (
+            <h1 id="route-planner-heading" className="font-display mt-2 text-4xl font-semibold tracking-[-.03em] text-[#17231c] sm:text-5xl">Find a better way through the city.</h1>
+          )}
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718077]">
             Compare driving routes from Amazon Location. A route is called a green corridor only when a configured backend returns a route-level AQI score and marks it green.
           </p>
@@ -201,7 +204,16 @@ export default function RoutePlannerPage() {
         <aside className="rounded-xl border border-[#e1e9e3] bg-[#eef4ef] p-4 text-xs leading-5 text-[#647168]">
           A green-corridor classification depends on route-level AQI data from the configured scoring backend. If that data is absent, this planner shows route time and distance only; it does not infer clean air from route geometry or fastest travel time.
         </aside>
-      </div>
+    </div>
+  )
+
+  return embedded ? (
+    <section aria-labelledby="route-planner-heading" className="min-w-0 rounded-2xl border border-[#e1e9e3] bg-[#f5f8f5] px-4 py-6 sm:px-6">
+      {plannerContent}
+    </section>
+  ) : (
+    <main aria-labelledby="route-planner-heading" className="min-w-0 overflow-y-auto bg-[#f5f8f5] px-4 py-6 sm:px-7 lg:px-9">
+      {plannerContent}
     </main>
   )
 }

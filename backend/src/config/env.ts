@@ -33,11 +33,11 @@ export const env = {
   enableOpenAq: parseBoolean(process.env.ENABLE_OPENAQ, false),
   awsRegion: process.env.AWS_REGION ?? 'us-east-1',
   dynamoDBTable: requiredWhenEnabled(process.env.DYNAMODB_TABLE, 'DYNAMODB_TABLE', enableDynamoDB),
-  alertsTable: requiredWhenEnabled(process.env.DYNAMODB_ALERTS_TABLE, 'DYNAMODB_ALERTS_TABLE', enableDynamoDB),
-  decisionsTable: requiredWhenEnabled(process.env.DYNAMODB_DECISIONS_TABLE, 'DYNAMODB_DECISIONS_TABLE', enableDynamoDB),
   bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-3-5-sonnet-20241022-v2:0',
   openAqApiKey: process.env.OPENAQ_API_KEY?.trim() || undefined,
   openAqLocationId: process.env.OPENAQ_LOCATION_ID?.trim() || '8118',
+  dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY?.trim() || undefined,
+  cpcbAqiResourceId: process.env.CPCB_AQI_RESOURCE_ID?.trim() || '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69',
   appName: 'Saans Saathi API',
   appVersion: '1.0.0',
 } as const

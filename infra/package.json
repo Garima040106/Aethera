@@ -9,12 +9,13 @@
     "build": "tsc",
     "watch": "tsc -w",
     "cdk": "cdk",
-    "synth:api": "cdk synth AetheraBackendApiStack",
-    "deploy:api": "cdk deploy AetheraBackendApiStack"
+    "synth:api": "npm run build && cdk synth AetheraBackendApiStack",
+    "deploy:api": "npm run build && cdk deploy AetheraBackendApiStack"
   },
   "devDependencies": {
     "aws-cdk": "^2.160.0",
     "aws-cdk-lib": "^2.160.0",
+    "@types/node": "^22.18.6",
     "constructs": "^10.3.0",
     "esbuild": "^0.25.0",
     "typescript": "~5.5.0"
