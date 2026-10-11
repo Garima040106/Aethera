@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import './DashboardPage.css'
 import { api } from '../services/api'
 import type { ForecastResponse, InversionResponse, PlumeResponse, DecisionRecord } from '../services/api'
 

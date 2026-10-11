@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import './CompanionPage.css'
 import { api } from '../services/api'
 import type { HealthEventResponse } from '../services/api'
 

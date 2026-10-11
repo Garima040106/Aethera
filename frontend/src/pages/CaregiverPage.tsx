@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import './CaregiverPage.css'
 import { api } from '../services/api'
 import type { AlertSimulateResponse } from '../services/api'
 
