@@ -1,5 +1,4 @@
 import { createBrowserRouter } from 'react-router-dom'
-import PublicLayout from '../components/PublicLayout'
 import ProtectedRoute from '../components/ProtectedRoute'
 import SiteLayout from '../components/layout/SiteLayout'
 import HomePage from '../pages/HomePage'
@@ -10,13 +9,8 @@ import CaregiverPage from '../pages/CaregiverPage'
 import RoutePlannerPage from '../pages/RoutePlannerPage'
 
 export const router = createBrowserRouter([
-  {
-    element: <PublicLayout />,
-    children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/login', element: <LoginPage /> },
-    ],
-  },
+  { path: '/', element: <HomePage /> },
+  { path: '/login', element: <LoginPage /> },
   {
     element: <ProtectedRoute />,
     children: [
