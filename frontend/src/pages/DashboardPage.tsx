@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const [showFamilyForm, setShowFamilyForm] = useState(false)
   const [familyName, setFamilyName] = useState('')
   const [familyContact, setFamilyContact] = useState('')
-  const [familyMembers, setFamilyMembers] = useState<string[]>([])
+  const [familyMembers, setFamilyMembers] = useState<string[]>(['Rohan', 'Priya', 'Amit'])
   const [alertStatus, setAlertStatus] = useState<string | null>(null)
   const user = getDemoUser()
 
@@ -96,9 +96,9 @@ export default function DashboardPage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 pb-10 sm:gap-8">
         <header className="elder-dashboard-header">
           <div>
-            <p className="elder-eyebrow">A simple check for today</p>
+            <p className="elder-eyebrow">Your personal air dashboard</p>
             <h1 className="mt-2">Good day, {firstName}.</h1>
-            <p className="mt-2 text-lg leading-7 text-[#62635c]">See the air, decide what feels right, and get on with your day.</p>
+            <p className="mt-2 text-lg leading-7 text-[#62635c]">See today’s air, plan your day, and stay connected to the people you trust.</p>
           </div>
           <label className="elder-location-picker">
             <span><MapPinIcon size={20} /> I am checking</span>
@@ -144,17 +144,17 @@ export default function DashboardPage() {
             <h2 id="quick-actions-heading">Quick help</h2>
           </div>
           <div className="elder-action-grid">
-            <Link to="/companion" className="elder-action-card elder-action-card-sage">
+            <Link to="/check-in" className="elder-action-card elder-action-card-sage">
               <span className="elder-action-icon"><HeartPulseIcon size={27} /></span>
               <span><strong>Check how I feel</strong><small>Talk through how you are feeling</small></span>
               <ArrowRightIcon size={21} />
             </Link>
-            <Link to="/caregiver-login" className="elder-action-card elder-action-card-sand">
+            <Link to="/alerts" className="elder-action-card elder-action-card-sand">
               <span className="elder-action-icon"><ShieldAlertIcon size={27} /></span>
               <span><strong>Contact my care circle</strong><small>Reach someone you trust</small></span>
               <ArrowRightIcon size={21} />
             </Link>
-            <Link to="/routes" className="elder-action-card elder-action-card-sky">
+            <Link to="/plan-outing" className="elder-action-card elder-action-card-sky">
               <span className="elder-action-icon"><RouteIcon size={27} /></span>
               <span><strong>Plan a route</strong><small>Find a more comfortable way out</small></span>
               <ArrowRightIcon size={21} />

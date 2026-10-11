@@ -965,6 +965,34 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 .elder-decision-list strong { font-size: 15px; font-weight: 500; }
 .elder-decision-list span { color: #6e7068; font-size: 13px; }
 .elder-disclaimer { max-width: 850px; margin: 0; color: #72736b; font-size: 13px; line-height: 1.6; }
+.personal-page { min-height: 100%; background: var(--bg); padding: clamp(24px, 5vw, 64px); }
+.personal-page-content { width: min(100%, 760px); margin: 0 auto; }
+.personal-back-link { display: inline-block; margin-bottom: 38px; color: #52674f; font-size: 16px; text-decoration: none; }
+.personal-page h1 { margin: 10px 0 0; font-size: clamp(2.5rem, 6vw, 4.4rem); line-height: 1; }
+.personal-page-intro { max-width: 620px; margin: 18px 0 0; color: #62635c; font-size: 19px; line-height: 1.6; }
+.personal-choice-grid { display: grid; gap: 14px; margin-top: 32px; }
+.personal-choice-grid button { min-height: 76px; border: 1px solid #d5dfd2; border-radius: 16px; background: #edf5eb; color: #263f2b; font-size: 20px; font-weight: 600; text-align: left; padding: 0 22px; cursor: pointer; }
+.personal-choice-grid button:last-child { background: #f2ecdc; border-color: #e3d7bc; }
+.personal-confirmation { display: grid; gap: 12px; margin-top: 18px; border-radius: 14px; background: #e8f4ec; padding: 17px; color: #28613b; font-size: 16px; }
+.personal-confirmation a, .personal-secondary-link { color: #174d35; font-weight: 600; }
+.personal-alert-card { display: flex; gap: 16px; margin-top: 30px; border: 1px solid #e1c4bc; border-radius: 18px; background: #f7e9e4; padding: 22px; }
+.personal-contacts-card { margin-top: 28px; border: 1px solid #d5dfd2; border-radius: 18px; background: #edf5eb; padding: 22px; }
+.personal-contacts-card h2 { margin: 8px 0 0; font-size: 25px; }
+.personal-contact-list { display: grid; gap: 10px; margin-top: 17px; }
+.personal-contact { display: flex; align-items: center; gap: 12px; border-radius: 12px; background: #fffdf6; padding: 12px 14px; }
+.personal-contact-avatar { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #d5e8d3; color: #28613b; font-size: 18px; font-weight: 600; }
+.personal-contact strong, .personal-contact span { display: block; }
+.personal-contact strong { color: #263f2b; font-size: 16px; }
+.personal-contact div span { margin-top: 2px; color: #68766a; font-size: 13px; }
+.personal-alert-icon { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #d95b35; color: #fff; font-size: 25px; font-weight: 700; }
+.personal-alert-card h2 { margin: 8px 0 0; font-size: 25px; }
+.personal-alert-card p:not(.elder-eyebrow) { margin: 8px 0 0; color: #5f4b45; font-size: 16px; line-height: 1.55; }
+.personal-alert-card time { display: block; margin-top: 10px; color: #7a6158; font-size: 13px; }
+.personal-primary-button { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; margin-top: 22px; border: 0; border-radius: 999px; background: #174d35; padding: 0 22px; color: #fff; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.personal-secondary-link { display: block; margin-top: 20px; font-size: 16px; text-decoration: none; }
+.personal-time-list { display: grid; gap: 11px; margin-top: 30px; }
+.personal-time-list div { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #d5dfd2; border-radius: 14px; background: #edf5eb; padding: 17px 19px; color: #263f2b; font-size: 17px; }
+.personal-time-list span { color: #28613b; font-size: 14px; font-weight: 600; }
 @media (min-width: 900px) {
   .elder-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .elder-action-card { grid-template-columns: 46px minmax(0, 1fr); min-height: 150px; align-content: center; }
