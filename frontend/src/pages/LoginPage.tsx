@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AetheraLogo, ArrowRightIcon, LockIcon } from '../components/Icons'
+import CursorEffect from '../components/CursorEffect'
 import { DEMO_CREDENTIALS, signInDemo } from '../services/demoAuth'
 
 export default function LoginPage() {
@@ -22,7 +23,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page grid min-h-[calc(100vh-72px)] bg-[#fffef3] pt-4 lg:grid-cols-2">
+    <>
+      <CursorEffect />
+      <main className="login-page grid min-h-screen bg-[#fffef3] lg:grid-cols-2">
       <section className="flex items-center justify-center px-6 py-14 sm:px-10 lg:px-16">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-[#647168] no-underline hover:text-[#174d35]">
@@ -81,6 +84,7 @@ export default function LoginPage() {
           Aethera is a support tool, not a medical device. Forecast and sample values are for demonstration.
         </p>
       </aside>
-    </main>
+      </main>
+    </>
   )
 }

@@ -62,6 +62,7 @@
 
 * { box-sizing: border-box; }
 html { min-width: 320px; scroll-behavior: smooth; scroll-padding-top: 88px; }
+section[id] { scroll-margin-top: 6rem; }
 body {
   min-width: 320px; margin: 0; font-family: var(--font-sans);
   font-size: var(--text-body); line-height: 1.55; color: var(--text);
@@ -135,6 +136,49 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 
 .header-actions {
   display: flex; align-items: center; gap: 8px;
+}
+.lang-switcher {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgb(255 253 246 / 92%);
+  box-shadow: var(--shadow-sm);
+}
+.lang-switcher .lang-btn {
+  display: inline-flex;
+  min-width: 34px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.lang-switcher .lang-btn:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+.lang-switcher .lang-btn.lang-btn-active {
+  background: #19191b;
+  color: #fffef3;
+}
+.lang-switcher .lang-btn:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -475,6 +519,15 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
   background-color: var(--card);
   border-color: var(--border);
 }
+.signal-card {
+  min-height: 220px;
+  padding: 1.75rem;
+  border: 1px solid rgb(25 25 27 / 5%);
+  border-radius: 1.25rem;
+}
+.signal-card-sand { background: #f2ecdc; }
+.signal-card-sage { background: #e8ece2; }
+.signal-card-rose { background: #efe4df; }
 .companion-page, .caregiver-page { background-color: var(--bg); }
 
 .custom-cursor-ring {
@@ -543,6 +596,9 @@ body, body * { cursor: none !important; }
   }
   .app-floating-nav .header-actions { gap: 5px; }
   .services-marquee-group { gap: 1.5rem; padding-right: 1.5rem; font-size: 1.25rem; }
+  .signal-card { min-height: 0; padding: 1.35rem; }
+  .lang-switcher { gap: 1px; padding: 2px; }
+  .lang-switcher .lang-btn { min-width: 29px; height: 28px; padding: 0 6px; }
 }
 
 /* Animation keyframes */

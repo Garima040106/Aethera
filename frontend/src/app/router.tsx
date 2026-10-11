@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 import ProtectedRoute from '../components/ProtectedRoute'
 import SiteLayout from '../components/layout/SiteLayout'
+import PublicLayout from '../components/PublicLayout'
 import HomePage from '../pages/HomePage'
 import LoginPage from '../pages/LoginPage'
 import DashboardPage from '../pages/DashboardPage'
@@ -10,7 +11,7 @@ import RoutePlannerPage from '../pages/RoutePlannerPage'
 
 export const router = createBrowserRouter([
   {
-    element: <SiteLayout />,
+    element: <PublicLayout />,
     children: [
       { path: '/', element: <HomePage /> },
     ],
