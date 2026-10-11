@@ -22,7 +22,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-[calc(100vh-72px)] bg-[#f7f9f7] pt-4 lg:grid-cols-2">
+    <main className="login-page grid min-h-[calc(100vh-72px)] bg-[#fffef3] pt-4 lg:grid-cols-2">
       <section className="flex items-center justify-center px-6 py-14 sm:px-10 lg:px-16">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-[#647168] no-underline hover:text-[#174d35]">
@@ -64,7 +64,7 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <aside className="relative hidden overflow-hidden bg-[#174d35] px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden bg-[#19191b] px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -right-32 -top-24 h-[520px] w-[520px] rounded-full border border-white/10" />
         <div className="absolute -right-16 -top-8 h-[390px] w-[390px] rounded-full border border-white/10" />
         <div className="absolute -bottom-56 -left-32 h-[560px] w-[560px] rounded-full bg-[#246b49]/70 blur-2xl" />

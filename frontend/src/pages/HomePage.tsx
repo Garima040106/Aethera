@@ -9,9 +9,9 @@ const highlights = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-[calc(100vh-72px)] bg-[#f7f9f7] pt-4 text-[#17231c]">
+    <main className="public-home min-h-[calc(100vh-72px)] bg-[#fffef3] pt-4 text-[#19191b]">
       <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_25%,#dcece1_0%,transparent_42%),linear-gradient(135deg,#f7f9f7_0%,#eef4ef_100%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_25%,#e7e6d9_0%,transparent_42%),linear-gradient(135deg,#fffef3_0%,#f4f2e8_100%)]" />
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.02fr_.98fr] lg:px-10 lg:py-28">
           <div>
             <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#d3e4d8] bg-white/80 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#246b49] shadow-sm">
@@ -155,12 +155,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      <footer className="border-t border-[#e1e9e3] bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-6 text-xs text-[#78847d] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <span>Aethera · Environmental intelligence for Delhi NCR</span>
-          <span>Support tool, not a medical device. In an emergency call 112.</span>
-        </div>
-      </footer>
     </main>
   )
 }
