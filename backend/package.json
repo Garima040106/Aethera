@@ -1,0 +1,37 @@
+{
+  "name": "saans-saathi-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "vitest run src/tests",
+    "test:watch": "vitest src/tests"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.850.0",
+    "@aws-sdk/client-dynamodb": "^3.850.0",
+    "@aws-sdk/lib-dynamodb": "^3.850.0",
+    "@codegenie/serverless-express": "^4.17.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.18.6",
+    "@types/supertest": "^6.0.3",
+    "aws-sdk-client-mock": "^4.1.0",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.5",
+    "typescript": "~5.9.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,13 +1,17 @@
 # Saans Saathi (Aethera)
 
-**An AI-powered environmental health companion for Delhi NCR. It predicts coupled air-weather pollution spikes, watches over vulnerable people on their phones without leaking raw biometrics, and alerts family caregivers when it matters.**
+**An environmental health companion demonstration for Delhi NCR. It presents an illustrative coupled air-weather surrogate, privacy-conscious API examples, and caregiver workflow previews. It does not connect sensors, live environmental feeds, or real alert services.**
 
 Built for [Environmental Hacks](https://www.wemakedevs.org/aws/env) (Bharat Builds Tour, WeMakeDevs x AWS). Track: **Air**.
 Team: **Prometheus**
 
+> **Migration status:** the Express + TypeScript backend in `backend/` is the local API implementation. The Python FastAPI application and its tests are retained as behavioral references. Environmental data and alert workflows are deterministic demonstrations; no AWS resources are deployed, and DynamoDB/Bedrock are disabled by default. See [docs/migration-checklist.md](./docs/migration-checklist.md) for the route/module compatibility matrix.
+
 ---
 
 ## Architecture Overview
+
+The diagram below shows the product's intended system context. Only the local frontend and Express API are runnable from this repository today; AWS resources and external data feeds are definitions/design references, not deployed or connected services.
 
 ```
 +---------------------------------------------------------------------------------------------------+
@@ -15,25 +19,25 @@ Team: **Prometheus**
 |                                                                                                   |
 |   +-----------------------+     +------------------------+     +------------------------------+   |
 |   | Dashboard Page        |     | Companion Page (Kamla) |     | Caregiver Page (Rohan)       |   |
-|   | - 72h Coupled Chart   |     | - Hindi/EN Guidance    |     | - Calm Actionable Cards      |   |
-|   | - Inversion Strength  |     | - On-Device Risk AI    |     | - One-Tap Calling            |   |
-|   | - Smoke Plume Map     |     | - "Are you ok?" Check  |     | - Cedar Consent Transparency |   |
-|   | - Decision Log        |     | - Local Vitals (HR/O2) |     | - Escalation Timeline        |   |
+|   | - 72h Coupled Chart   |     | - Multilingual Guidance Preview | | - Caregiver UI Preview       |   |
+|   | - Inversion Strength  |     | - Deterministic Risk Demo |      | - Call UI Preview             |   |
+|   | - Sample Plume Map    |     | - Health-Event Simulation |      | - Simulated Alert Trace       |   |
+|   | - Decision Log        |     | - No Sensor Integration |       | - Sample Data Clearly Marked  |   |
 |   +-----------------------+     +------------------------+     +------------------------------+   |
 |                                                                                                   |
-|               Offline Cache (ServiceWorker / IndexedDB / LocalStorage)                            |
+|                   Frontend API Response Cache (LocalStorage)                                      |
 +-------------------------------------------------+-------------------------------------------------+
                                                   | REST / JSON (Coarse Risk & Forecast Queries)
                                                   v
 +---------------------------------------------------------------------------------------------------+
-|                                 BACKEND API LAYER (FastAPI :8000)                                 |
+|                           BACKEND API LAYER (Express + TypeScript :8000)                          |
 |                                                                                                   |
 |   +------------------------+  +--------------------------+  +---------------------------------+   |
 |   | Forecast & Inversion   |  | Multi-Agent Intelligence |  | Deterministic Privacy & Safety  |   |
-|   | - 72h Coupled Stepper  |  | - Air Watcher Agent      |  | - Consent Verification          |   |
-|   | - Ventilation Proxy    |  | - Health Guardian Agent  |  | - Vitals Coarse Quantization    |   |
-|   | - Forward Plume Advect |  | - Care Circle Agent      |  | - Deduplication & Cooldown      |   |
-|   | - ML Bias Correction   |  | - Coordinator Agent      |  | - Idempotent Alert Ladder       |   |
+|   | - 72h Coupled Surrogate|  | - Air Watcher Agent      |  | - Consent Verification          |   |
+|   | - Ventilation Proxy    |  | - Health Guardian Agent  |  | - Reject Raw Health Telemetry   |   |
+|   | - Sample Plume Advect  |  | - Care Circle Agent      |  | - Deduplication & Cooldown      |   |
+|   | - Coupled Feedback Model | | - Coordinator Agent      |  | - Simulated Alert Ladder        |   |
 |   +------------------------+  +--------------------------+  +---------------------------------+   |
 +----------------------------------------+------------------------------------+---------------------+
                                          |                                    |
@@ -41,10 +45,10 @@ Team: **Prometheus**
 +------------------------------------------------+   +----------------------------------------------+
 |             ENVIRONMENTAL DATA SOURCES         |   |                 AWS CLOUD LAYER              |
 |                                                |   | (Deployable via CDK / Local Fallback Mode)   |
-| - CPCB / OpenAQ (Station AQI & PM2.5/PM10/O3)  |   | - Amazon Bedrock (Foundation Models)         |
-| - NASA FIRMS (Active stubble burning fires)    |   | - AWS Step Functions (Alert Ladder Orchestr.)|
-| - NOAA GFS / IMD (Wind, Temp, Boundary Layer)  |   | - Amazon DynamoDB (Alerts & Decision Audit)  |
-| - Deterministic Local Replay Fixtures          |   | - Amazon SNS (SMS / Email to Caregiver)      |
+| - CPCB / OpenAQ (not connected in local port)  |   | - Bedrock (opt-in; not deployed)              |
+| - NASA FIRMS (not connected in local port)     |   | - Step Functions (CDK definition only)        |
+| - NOAA GFS / IMD (not connected in local port) |   | - DynamoDB (opt-in; not deployed)             |
+| - Deterministic Local Replay Fixtures          |   | - SNS (CDK definition only; no messages)      |
 +------------------------------------------------+   +----------------------------------------------+
 ```
 
@@ -53,34 +57,34 @@ Team: **Prometheus**
 ## Key Features
 
 1. **72-Hour Coupled Air & Weather Forecast:**
-   - Couples particulate aerosol optical depth with surface cooling and boundary layer suppression.
-   - Accurately captures Delhi NCR nocturnal inversion spikes (+120 AQI higher than uncoupled forecasts).
+   - Applies the existing illustrative coupled surrogate to deterministic local inputs.
+   - Demonstrates how a numerical coupled surrogate can diverge from an uncoupled run; it is not a validated real-world forecast.
    - Inversion strength index (Weak, Moderate, Strong) computed via ventilation volume ($V_c = \text{PBLH} \times U_{10}$).
-   - Forward Lagrangian parcel advection tracking smoke plumes from upwind Punjab/Haryana fire clusters.
+   - Sample forward parcel-advection paths; no live fire or weather feed is connected.
 
-2. **On-Device Personal Companion:**
-   - Hindi-first and English guidance with live voice speech synthesis ("सुनें").
-   - On-device vitals anomaly detection (HR, SpO2, temperature, respiratory distress).
-   - "क्या आप ठीक हैं?" (Are you ok?) check-in with 2-minute escalation timer.
-   - 30-second cancellation countdown before emergency dispatch to prevent false alarms.
+2. **Companion UI Demonstration:**
+   - Hindi, English, and Punjabi interface and guidance previews.
+   - No sensor access or on-device vitals anomaly detector is implemented in this web demo.
+   - Health-event submissions exercise consent checks and simulated deterministic responses.
+   - No call, emergency dispatch, or real-world escalation is initiated.
 
-3. **Privacy-by-Design with Cedar Policy:**
-   - Raw biometrics remain strictly on the device.
-   - Only coarse risk band (`LOW`, `MODERATE`, `HIGH`, `CRITICAL`) and coarse district are transmitted with user consent.
-   - Open-source Cedar policies formally enforce authorization.
+3. **Privacy Controls:**
+   - The API rejects raw health telemetry and accepts only coarse event fields.
+   - Consent and sharing checks are enforced before health-event processing.
+   - Deterministic Cedar-style rules model consent policy; this is not a deployed Cedar authorization service.
 
-4. **Multi-Agent Intelligence (Strands on Amazon Bedrock + Local Fallback):**
+4. **Four-Agent Behaviors (Bedrock-ready provider + Local Fallback):**
    - **Air Watcher:** Interprets forecast trends, plume transit, and inversion strength.
    - **Health Guardian:** Selects safe, verified preventive advice without clinical diagnostic claims.
-   - **Care Circle:** Formulates calm caregiver messages and manages the alert ladder.
-   - **Master Coordinator:** Orchestrates agent workflows and logs decisions to the audit trail.
+   - **Care Circle:** Prepares simulated caregiver messages and alert-ladder outcomes.
+   - **Master Coordinator:** Provides orchestration helpers and redacted decision records. Bedrock client support is opt-in; model output does not drive safety or escalation decisions.
 
 5. **AWS Serverless Minimal Infrastructure (`infra/`):**
-   - Infrastructure-as-code via AWS CDK.
-   - S3 ingestion cache with 14-day auto-purge lifecycle.
-   - Pay-per-request DynamoDB tables ($0 idle charges).
-   - Step Functions alert ladder state machine with Amazon SNS notifications.
-   - Local-first fallback allows 100% functionality without cloud credentials.
+   - Infrastructure-as-code definitions via AWS CDK; defining a resource does not mean it has been deployed or connected.
+   - CDK defines an S3 ingestion bucket with a 14-day lifecycle; no ingestion is connected.
+   - CDK defines DynamoDB tables; the local app uses memory unless manually enabled.
+   - CDK defines a Step Functions alert ladder and SNS topic; the local simulator sends no messages.
+   - Local deterministic backend operation requires no AWS credentials. Alert/SNS and Step Functions behavior is simulated locally.
 
 ---
 
@@ -88,100 +92,82 @@ Team: **Prometheus**
 
 ### Prerequisites
 - Node.js 20+ and npm
-- Python 3.11+
 
-### 1. Start the FastAPI Backend
-```bash
-# From repository root
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-- API Base URL: `http://localhost:8000`
-- Interactive OpenAPI Docs: `http://localhost:8000/docs`
-
-### 2. Start the React Frontend
-```bash
-# In another terminal
-cd frontend
+### 1. Start the Express Backend (PowerShell)
+```powershell
+# From the repository root, in a backend terminal
+Set-Location backend
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm install
 npm run dev
 ```
-- Web Application: `http://localhost:5173`
+The API listens at `http://localhost:8000`. The app factory is also exported through `backend/src/lambda.ts` for a future API Gateway HTTP API deployment; no Lambda is created automatically.
 
-### 3. Run Automated Tests
-```bash
-# Run backend, ML, and privacy test suite
-python -m pytest tests/ -v
-
-# Run frontend build validation
-cd frontend && npm run build
+### 2. Start the React Frontend
+```powershell
+# From the repository root, in another PowerShell terminal
+Set-Location frontend
+npm install
+npm run dev
 ```
+The frontend uses `VITE_API_BASE_URL` when set and otherwise requests `http://localhost:8000`. Set it to the deployed API Gateway URL and rebuild the frontend for an AWS-hosted deployment.
+
+### 3. Build and Test
+```powershell
+# From the repository root
+Set-Location backend
+npm test
+npm run build
+
+Set-Location ..\frontend
+npm run build
+```
+
+Backend configuration is documented in `backend/.env.example`; the existing frontend template is `frontend/.env.example`. Actual `.env` files are git-ignored. `ENABLE_DYNAMODB=false` and `ENABLE_BEDROCK=false` are safe local defaults and require no AWS credentials.
+
+The frontend's demo login is stored in browser `localStorage`; it is a navigation/demo convenience, not authentication or access control. Never use it to protect production health data.
+
+### API endpoints
+
+| Method | Endpoint |
+|---|---|
+| GET | `/health` |
+| GET | `/api/forecast?area=noida&hours=72` |
+| GET | `/api/inversion?area=noida` |
+| GET | `/api/plumes?area=noida` |
+| GET | `/api/metrics` |
+| GET | `/api/agents/status` |
+| GET | `/api/decisions` |
+| POST | `/api/events/health` |
+| POST | `/api/alerts/simulate` |
+| POST | `/api/scenarios/compare` |
+
+### Optional AWS integrations (manual activation only)
+
+* **DynamoDB:** configure resources separately, set `ENABLE_DYNAMODB=true`, `DYNAMODB_ALERTS_TABLE`, and `DYNAMODB_DECISIONS_TABLE`, and set `AWS_REGION`. Supply identity through the standard AWS credential provider chain (for example, a locally configured AWS profile). The runtime needs `dynamodb:PutItem` and `dynamodb:GetItem` on the alert table and `dynamodb:PutItem` and `dynamodb:Scan` on the decisions table. Misconfiguration and permission failures are reported; the application does not silently fall back to memory after a failed write.
+* **Bedrock:** set `ENABLE_BEDROCK=true`, `AWS_REGION`, and `BEDROCK_MODEL_ID`, then configure the standard AWS credential provider chain and grant `bedrock:Converse` for that model. The deterministic local mode remains the default. Agent-generated text is not used to make authorization, consent, health escalation, or emergency decisions.
+
+No `cdk deploy` is part of this setup. For a future deployment, review `infra/lib/aethera-stack.ts`, add and review explicit Lambda/API Gateway resources and least-privilege grants, deploy only through a separately approved process, configure the backend environment and IAM role, then set `VITE_API_BASE_URL` to the API Gateway URL and rebuild/redeploy the static frontend. `docs/migration-checklist.md` records the CDK resource keys, endpoint contracts, and remaining limitations.
 
 ---
 
 ## Repository Structure
-## Repo layout
 
-Aethera is a **web app first**. The companion and caregiver phone experiences are shown as phone previews inside the web app. Folders marked **(exists)** are present in the repository; the rest are planned.
+The companion and caregiver phone experiences are previews inside the web app. AWS integrations are optional and disabled by default.
 
 ```text
 Aethera/
-├── README.md                          (exists)
-├── LICENSE                            planned
+├── README.md
 ├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── ci.yml                     lint and build on every push
-│
-├── frontend/                          (exists) React + TypeScript + Vite
-│   ├── index.html
-│   ├── package.json
-│   ├── public/
-│   └── src/
-│       ├── main.tsx
-│       ├── app/                       router and app setup
-│       ├── pages/
-│       │   ├── home/                  landing page
-│       │   ├── dashboard/             forecast, inversion, plume map, agent log
-│       │   ├── companion/             phone preview: Kamla's screen
-│       │   └── caregiver/             phone preview: caregiver's message
-│       ├── components/
-│       │   ├── layout/                header, footer
-│       │   ├── phone/                 phone frame used by the previews
-│       │   └── ui/                    badges, cards, risk bars
-│       ├── data/                      sample data until the API is connected
-│       ├── api/                       client for the backend (GraphQL)
-│       ├── lib/                       helpers: chart scale, AQI categories
-│       └── styles/                    design tokens and global styles
-│
-├── backend/                           planned: Python services on AWS Lambda
-│   ├── ingest/                        CPCB/OpenAQ, NASA FIRMS and weather ingestion
-│   ├── forecast/                      inversion index, coupled models, plume tracker
-│   ├── agents/                        Strands agents on Bedrock
-│   │   ├── air_watcher/
-│   │   ├── health_guardian/
-│   │   ├── care_circle/
-│   │   ├── coordinator/
-│   │   └── advice_library/             safe advice text selected by agents
-│   ├── alerts/                        SNS messages and alert ladder
-│   ├── api/                           GraphQL schema and AppSync resolvers
-│   └── shared/                        shared types and helpers
-│
-├── ml/                                planned: forecast model training and evaluation
-├── tools/
-│   └── vitals-simulator/              planned: sample heart rate and SpO2 readings
-├── infra/                             planned: AWS CDK (TypeScript)
-│   ├── bin/                           app entry
-│   └── lib/
-│       ├── data-stack.ts              S3, DynamoDB, ingestion schedule
-│       ├── forecast-stack.ts           forecast Lambdas, SageMaker
-│       ├── agents-stack.ts              Bedrock, AgentCore, Step Functions, SNS
-│       ├── api-stack.ts                 AppSync, Cognito
-│       ├── iot-stack.ts                 IoT Core rules
-│       └── web-stack.ts                Amplify Hosting, CloudFront, WAF
-└── scripts/                           planned: deployment and local helper scripts
+├── frontend/              React + TypeScript + Vite
+├── backend/               Express + TypeScript REST API
+├── app/                   Retained FastAPI behavioral reference
+├── tests/                 Retained Python tests
+├── infra/                 AWS CDK definitions; not deployed
+└── docs/                  Migration and project documentation
 ```
 
-Each service in `backend/` will have its own `handler.py`, `requirements.txt`, and `tests/` directory.
+The `app/` FastAPI backend and Python tests remain in the repository as behavioral references. The AWS CDK source defines resources but does not deploy them.
 
 ## Run the frontend
 
@@ -201,43 +187,7 @@ Clone the repository and navigate to the frontend directory:
 git clone <repository-url>
 cd Aethera/frontend
 ```
-Aethera/
-├── app/                  # FastAPI Backend Application
-│   ├── main.py           # Application entrypoint & CORS middleware
-│   ├── api/routes.py     # Endpoints (/forecast, /inversion, /plumes, /metrics, etc.)
-│   ├── core/             # Config, logging, Bedrock provider, Cedar policies
-│   ├── schemas/          # Pydantic request and response models
-│   ├── data/             # CPCB, OpenAQ, NASA FIRMS, GFS/IMD adapters & fixtures
-│   ├── ml/               # 72h coupled surrogate, bias correction, validation
-│   ├── services/         # Forecast, inversion, plume tracker, risk engine
-│   ├── agents/           # Air Watcher, Health Guardian, Care Circle, Coordinator
-│   └── workflows/        # Step Functions alert ladder simulator
-├── frontend/             # React 19 + TypeScript + Vite Client Application
-│   ├── src/pages/        # DashboardPage, CompanionPage, CaregiverPage
-│   ├── src/services/     # Centralized API client with offline caching
-│   └── src/App.tsx       # Landing page & navigation
-├── infra/                # AWS CDK Infrastructure as Code
-│   ├── bin/              # CDK app entrypoint
-│   └── lib/              # AetheraStack (S3, DynamoDB, SNS, Step Functions)
-├── tests/                # Automated pytest suite (API, ML, Privacy)
-├── docs/                 # Primary Project Documentation
-│   ├── saans-saathi-prd.md
-│   ├── saans-saathi-implementation-plan.md
-│   ├── architecture.md
-│   ├── implementation-status.md
-│   ├── requirements-traceability.md
-│   ├── model-evaluation.md
-│   ├── data-sources-and-limitations.md
-│   ├── privacy-and-security.md
-│   ├── aws-deployment.md
-│   └── demo-script.md
-├── requirements.txt      # Python dependencies
-└── .env.example          # Environment variables template
-```
-
----
-
-Install dependencies:
+Install frontend dependencies:
 
 ```bash
 npm install
@@ -259,7 +209,7 @@ Open the URL printed in the terminal, usually `http://localhost:5173`.
 |---|---|
 | `/` | Aethera landing page |
 | `/dashboard` | Air quality forecast dashboard |
-| `/companion` | On-device health companion UI preview |
+| `/companion` | Health-event simulation and companion UI preview |
 | `/caregiver` | Care Circle caregiver UI preview |
 
 ### Production build
@@ -276,7 +226,7 @@ To preview the production build locally:
 npm run preview
 ```
 
-**Note:** The frontend currently uses sample data and UI previews. Backend integration, live data, and some interactive features are not connected yet. The frontend can be run locally without deploying the AWS infrastructure.
+**Note:** The dashboard and interactive Companion/Caregiver flows use the Express backend for API data and deterministic simulations. The environmental readings remain sample fixtures; no live data sources or AWS alert services are connected. The frontend can be run locally without deploying AWS infrastructure.
 
 ## Team Prometheus
 
@@ -287,4 +237,4 @@ npm run preview
 3. **Inversion & Plumes:** Inversion strength is computed via ventilation volume ($V_c = \text{PBLH} \times U_{10}$), and plume paths represent forward wind advection trajectories rather than legal source attribution.
 ## License
 
-Powered by AWS architecture.
+Prepared for optional AWS integrations; no AWS resources are deployed by this project setup.
