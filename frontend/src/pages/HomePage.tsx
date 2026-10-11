@@ -9,7 +9,7 @@ const highlights = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-[calc(100vh-72px)] bg-[#f7f9f7] text-[#17231c]">
+    <main className="min-h-[calc(100vh-72px)] bg-[#f7f9f7] pt-4 text-[#17231c]">
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_25%,#dcece1_0%,transparent_42%),linear-gradient(135deg,#f7f9f7_0%,#eef4ef_100%)]" />
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-6 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.02fr_.98fr] lg:px-10 lg:py-28">
@@ -18,9 +18,9 @@ export default function HomePage() {
               <span className="h-2 w-2 rounded-full bg-[#218653]" />
               ENVIRONMENTAL INTELLIGENCE FOR DELHI NCR
             </div>
-            <h1 className="max-w-2xl text-5xl font-semibold leading-[1.04] tracking-[-0.055em] text-[#17231c] sm:text-6xl lg:text-[4.4rem]">
+            <h1 className="font-display max-w-2xl text-5xl font-semibold leading-[1.04] tracking-[-0.035em] text-[#17231c] sm:text-6xl lg:text-[4.6rem]">
               Know what’s in the air.
-              <span className="mt-2 block text-[#246b49]">Know what to do next.</span>
+              <span className="font-display-italic mt-2 block text-[#246b49]">Know what to do next.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-[#526158]">
               Aethera brings local air forecasts, smoke movement and practical health guidance into one clear view —
@@ -137,7 +137,7 @@ export default function HomePage() {
       <section id="how-it-works" className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold tracking-[.16em] text-[#246b49]">ONE CLEARER PICTURE</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-.04em] text-[#17231c] sm:text-4xl">
+          <h2 className="font-display mt-3 text-4xl font-semibold tracking-[-.025em] text-[#17231c] sm:text-5xl">
             From changing weather to practical next steps.
           </h2>
         </div>

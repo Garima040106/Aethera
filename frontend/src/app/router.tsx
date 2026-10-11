@@ -7,6 +7,7 @@ import LoginPage from '../pages/LoginPage'
 import DashboardPage from '../pages/DashboardPage'
 import CompanionPage from '../pages/CompanionPage'
 import CaregiverPage from '../pages/CaregiverPage'
+import RoutePlannerPage from '../pages/RoutePlannerPage'
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
         element: <SiteLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/routes', element: <RoutePlannerPage /> },
           { path: '/companion', element: <CompanionPage /> },
           { path: '/caregiver', element: <CaregiverPage /> },
         ],
