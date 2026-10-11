@@ -3,6 +3,9 @@ import request from 'supertest'
 import { createApplication } from '../app.js'
 import { InMemoryAlertRepository, InMemoryDecisionRepository, InMemoryEnvironmentalRepository } from '../repositories/in-memory.js'
 import type { RepositorySet } from '../aws/repositories.js'
+import { LocationSearchUnavailableError } from '../services/location-search-service.js'
+import { CpcbAqiUnavailableError } from '../services/cpcb-aqi-client.js'
+import { LocationRoutesUnavailableError } from '../services/location-routes-service.js'
 
 describe('Express API compatibility', () => {
   let app: ReturnType<typeof createApplication>
@@ -29,6 +32,196 @@ describe('Express API compatibility', () => {
     expect(response.body.timestamp).toEqual(expect.any(String))
   })
 
+  it('exposes DynamoDB connectivity separately from application liveness', async () => {
+    const disabled = await request(app).get('/health/dynamodb').expect(503)
+    expect(disabled.body).toMatchObject({ status: 'disabled', database: 'dynamodb' })
+
+    let checkCount = 0
+    repositories = {
+      ...repositories,
+      mode: 'dynamodb',
+      checkConnectivity: async () => { checkCount += 1 },
+    }
+    app = createApplication({ repositories })
+    const connected = await request(app).get('/health/dynamodb').expect(200)
+    expect(connected.body).toMatchObject({
+      status: 'healthy',
+      database: 'dynamodb',
+      region: 'us-east-1',
+      table: 'AtheraEnvironmentalData',
+    })
+    expect(connected.body.checked_at).toEqual(expect.any(String))
+    expect(checkCount).toBe(1)
+  })
+
+  it('returns an honest no-data response when the CPCB station provider is not configured', async () => {
+    const unconfiguredApp = createApplication({
+      repositories,
+      cpcbAqi: { configured: false, getDelhiStations: async () => [] },
+    })
+    const response = await request(unconfiguredApp).get('/api/aqi/stations').expect(200)
+    expect(response.body).toMatchObject({
+      status: 'unavailable',
+      updated_at: null,
+      source: null,
+      stations: [],
+    })
+    expect(response.body.detail).toContain('DATA_GOV_IN_API_KEY')
+  })
+
+  it('serves CPCB station observations and returns provider errors as service-unavailable', async () => {
+    const cpcbAqi = {
+      configured: true,
+      getDelhiStations: async () => [{
+        id: 'ito|28.6289|77.2405',
+        name: 'ITO',
+        locality: 'Delhi',
+        latitude: 28.6289,
+        longitude: 77.2405,
+        aqi: 137,
+        aqi_system: 'INDIA_CPCB' as const,
+        observed_at: new Date().toISOString(),
+        source: 'CPCB · data.gov.in',
+        pollutants: {},
+      }],
+    }
+    const stationsApp = createApplication({ repositories, cpcbAqi })
+    const response = await request(stationsApp).get('/api/aqi/stations').expect(200)
+    expect(response.body).toMatchObject({
+      status: 'available',
+      source: 'CPCB · data.gov.in',
+      stations: [{ name: 'ITO', aqi: 137, aqi_system: 'INDIA_CPCB' }],
+    })
+
+    const failedApp = createApplication({
+      repositories,
+      cpcbAqi: {
+        configured: true,
+        getDelhiStations: async () => { throw new CpcbAqiUnavailableError() },
+      },
+    })
+    await request(failedApp).get('/api/aqi/stations').expect(503)
+  })
+
+  it('scores routes only from recent nearby CPCB stations', async () => {
+    const cpcbAqi = {
+      configured: true,
+      getDelhiStations: async () => [{
+        id: 'central-delhi|28.6139|77.209',
+        name: 'Central Delhi',
+        locality: 'Delhi',
+        latitude: 28.6139,
+        longitude: 77.209,
+        aqi: 82,
+        aqi_system: 'INDIA_CPCB' as const,
+        observed_at: new Date().toISOString(),
+        source: 'CPCB · data.gov.in',
+        pollutants: {},
+      }],
+    }
+    const scoreApp = createApplication({ repositories, cpcbAqi })
+    const score = await request(scoreApp)
+      .post('/api/routes/score')
+      .send({ geometry: { type: 'LineString', coordinates: [[77.2, 28.6], [77.22, 28.62]] } })
+      .expect(200)
+    expect(score.body).toMatchObject({
+      average_aqi: 82,
+      is_green_corridor: true,
+      source: 'CPCB · data.gov.in',
+    })
+
+    await request(scoreApp)
+      .post('/api/routes/score')
+      .send({ geometry: { type: 'LineString', coordinates: [[181, 28.6], [77.22, 28.62]] } })
+      .expect(422)
+  })
+
+  it('validates place-search input and returns bounded Amazon Location results', async () => {
+    const locationSearch = {
+      configured: true,
+      search: async (query: string) => [{
+        id: 'place-1',
+        label: query,
+        address: 'Delhi, India',
+        longitude: 77.209,
+        latitude: 28.6139,
+      }],
+    }
+    const searchApp = createApplication({ repositories, locationSearch })
+
+    await request(searchApp).get('/api/location/search?q=x').expect(422)
+    const response = await request(searchApp).get('/api/location/search?q=Connaught%20Place').expect(200)
+    expect(response.body.results).toEqual([{
+      id: 'place-1',
+      label: 'Connaught Place',
+      address: 'Delhi, India',
+      longitude: 77.209,
+      latitude: 28.6139,
+    }])
+    await request(searchApp).get(`/api/location/search?q=${'a'.repeat(161)}`).expect(422)
+
+    const unconfiguredApp = createApplication({
+      repositories,
+      locationSearch: { configured: false, search: async () => [] },
+    })
+    await request(unconfiguredApp).get('/api/location/search?q=Delhi').expect(503)
+
+    const failedSearchApp = createApplication({
+      repositories,
+      locationSearch: {
+        configured: true,
+        search: async () => { throw new LocationSearchUnavailableError() },
+      },
+    })
+    const unavailable = await request(failedSearchApp).get('/api/location/search?q=Delhi').expect(503)
+    expect(unavailable.body.detail).toContain('temporarily unavailable')
+  })
+
+  it('calculates routes through the Amazon Location SDK provider and validates coordinates', async () => {
+    let requestedCoordinates: unknown
+    const locationRoutes = {
+      calculate: async (origin: [number, number], destination: [number, number]) => {
+        requestedCoordinates = { origin, destination }
+        return [{
+          summary: { Distance: 4200, Duration: 900 },
+          legs: [{ geometry: { LineString: [[77.2, 28.6], [77.3, 28.7]] } }],
+        }]
+      },
+    }
+    const routesApp = createApplication({ repositories, locationRoutes })
+
+    await request(routesApp)
+      .post('/api/location/routes')
+      .send({ origin: [181, 28.6], destination: [77.3, 28.7] })
+      .expect(422)
+
+    const response = await request(routesApp)
+      .post('/api/location/routes')
+      .send({ origin: [77.2, 28.6], destination: [77.3, 28.7] })
+      .expect(200)
+
+    expect(requestedCoordinates).toEqual({
+      origin: [77.2, 28.6],
+      destination: [77.3, 28.7],
+    })
+    expect(response.body.routes).toEqual([{
+      summary: { Distance: 4200, Duration: 900 },
+      legs: [{ geometry: { LineString: [[77.2, 28.6], [77.3, 28.7]] } }],
+    }])
+
+    const unavailableApp = createApplication({
+      repositories,
+      locationRoutes: {
+        calculate: async () => { throw new LocationRoutesUnavailableError() },
+      },
+    })
+    const unavailable = await request(unavailableApp)
+      .post('/api/location/routes')
+      .send({ origin: [77.2, 28.6], destination: [77.3, 28.7] })
+      .expect(503)
+    expect(unavailable.body.detail).toContain('temporarily unavailable')
+  })
+
   it('returns complete forecast, inversion, plume and metrics contracts', async () => {
     const forecast = await request(app).get('/api/forecast?area=noida&hours=72').expect(200)
     expect(forecast.body.points).toHaveLength(73)
@@ -39,7 +232,7 @@ describe('Express API compatibility', () => {
       aqi_uncoupled: expect.any(Number),
       ventilation_coefficient_m2s: expect.any(Number),
     })
-    expect(forecast.body.source_provenance.model).toContain('72-hour coupled environmental surrogate')
+    expect(forecast.body.source_provenance.model).toContain('demonstration')
 
     const inversion = await request(app).get('/api/inversion?area=noida').expect(200)
     expect(['Weak', 'Moderate', 'Strong']).toContain(inversion.body.inversion_status_now)

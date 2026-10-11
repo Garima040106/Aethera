@@ -7,19 +7,32 @@ import { DecisionService } from '../services/decision-service.js'
 import { AlertLadder } from '../workflows/alert-ladder.js'
 import { getAgentStatus } from '../agents/agent-status.js'
 import { compareScenarios } from '../services/scenario-service.js'
-import { alertSimulationSchema, areaQuerySchema, environmentalHistoryQuerySchema, forecastQuerySchema, healthEventSchema, scenarioCompareSchema } from '../schemas/api.js'
+import { alertSimulationSchema, areaQuerySchema, environmentalHistoryQuerySchema, forecastQuerySchema, healthEventSchema, locationRouteSchema, placeSearchQuerySchema, routeAqiScoreSchema, scenarioCompareSchema } from '../schemas/api.js'
 import { asyncHandler, parseRequest } from '../middleware/errors.js'
 import { createRepositories, type RepositorySet } from '../aws/repositories.js'
+import { LocationSearchService } from '../services/location-search-service.js'
+import type { LocationSearchProvider } from '../services/location-search-service.js'
+import { CpcbAqiClient } from '../services/cpcb-aqi-client.js'
+import type { CpcbAqiProvider } from '../services/cpcb-aqi-client.js'
+import { LocationRoutesService } from '../services/location-routes-service.js'
+import type { LocationRoutesProvider } from '../services/location-routes-service.js'
+import { scoreRouteAqi } from '../services/aqi-route-scoring.js'
 
 export interface RouteDependencies {
   repositories?: RepositorySet
   environmental?: EnvironmentalService
+  locationSearch?: LocationSearchProvider
+  locationRoutes?: LocationRoutesProvider
+  cpcbAqi?: CpcbAqiProvider
 }
 
 export function createApiRouter(dependencies: RouteDependencies = {}): Router {
   const router = Router()
   const repositories = dependencies.repositories ?? createRepositories()
   const environmental = dependencies.environmental ?? new EnvironmentalService()
+  const locationSearch = dependencies.locationSearch ?? new LocationSearchService()
+  const locationRoutes = dependencies.locationRoutes ?? new LocationRoutesService()
+  const cpcbAqi = dependencies.cpcbAqi ?? new CpcbAqiClient()
   const riskEngine = new RiskEngine(repositories.alerts)
   const decisions = new DecisionService(repositories.decisions)
   const alertLadder = new AlertLadder(repositories.alerts, decisions)
@@ -34,6 +47,82 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
       timestamp: new Date().toISOString(),
     })
   })
+
+  router.get('/health/dynamodb', asyncHandler(async (_req, res) => {
+    if (repositories.mode !== 'dynamodb' || !repositories.checkConnectivity) {
+      res.status(503).json({
+        status: 'disabled',
+        database: 'dynamodb',
+        detail: 'DynamoDB persistence is not enabled.',
+      })
+      return
+    }
+    await repositories.checkConnectivity()
+    res.json({
+      status: 'healthy',
+      database: 'dynamodb',
+      region: env.awsRegion,
+      table: env.dynamoDBTable,
+      checked_at: new Date().toISOString(),
+    })
+  }))
+
+  router.get('/api/location/search', asyncHandler(async (req, res) => {
+    const query = parseRequest(() => placeSearchQuerySchema.parse(req.query), 'query')
+    if (!locationSearch.configured) {
+      res.status(503).json({ detail: 'Amazon Location place search is not configured.' })
+      return
+    }
+    res.json({ results: await locationSearch.search(query.q) })
+  }))
+
+  router.post('/api/location/routes', asyncHandler(async (req, res) => {
+    const routeRequest = parseRequest(() => locationRouteSchema.parse(req.body), 'body')
+    res.json({
+      routes: await locationRoutes.calculate(routeRequest.origin, routeRequest.destination),
+    })
+  }))
+
+  router.post('/api/routes/score', asyncHandler(async (req, res) => {
+    const scoreRequest = parseRequest(() => routeAqiScoreSchema.parse(req.body), 'body')
+    if (!cpcbAqi.configured) {
+      res.status(503).json({ detail: 'CPCB AQI data is not configured for route scoring.' })
+      return
+    }
+    const stations = await cpcbAqi.getDelhiStations()
+    const score = scoreRouteAqi(stations, scoreRequest.geometry.coordinates)
+    if (!score) {
+      res.status(503).json({ detail: 'No recent CPCB stations are close enough to score this route.' })
+      return
+    }
+    res.json(score)
+  }))
+
+  router.get('/api/aqi/stations', asyncHandler(async (_req, res) => {
+    if (!cpcbAqi.configured) {
+      res.json({
+        status: 'unavailable',
+        updated_at: null,
+        source: null,
+        stations: [],
+        detail: 'CPCB live station data is not configured. Set CPCB_API_KEY or DATA_GOV_IN_API_KEY in the backend environment.',
+      })
+      return
+    }
+    const stations = await cpcbAqi.getDelhiStations()
+    const latest = stations.reduce<string | null>((value, station) =>
+      value === null || Date.parse(station.observed_at) > Date.parse(value) ? station.observed_at : value, null)
+    const stale = latest !== null && Date.now() - Date.parse(latest) > 2 * 60 * 60 * 1000
+    res.json({
+      status: stations.length === 0 ? 'unavailable' : stale ? 'stale' : 'available',
+      updated_at: latest,
+      source: stations.length > 0 ? stations[0]!.source : 'CPCB · data.gov.in',
+      stations,
+      ...(stations.length === 0
+        ? { detail: 'The CPCB feed returned no Delhi stations with coordinates and enough valid pollutant readings to calculate an Indian AQI.' }
+        : {}),
+    })
+  }))
 
   router.get('/api/forecast', asyncHandler(async (req, res) => {
     const query = parseRequest(() => forecastQuerySchema.parse(req.query), 'query')

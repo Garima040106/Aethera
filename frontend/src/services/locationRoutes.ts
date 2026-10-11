@@ -1,6 +1,5 @@
-const API_KEY = import.meta.env.VITE_AWS_LOCATION_API_KEY
-const REGION = import.meta.env.VITE_AWS_REGION || 'us-east-1'
-const SCORE_ENDPOINT = import.meta.env.VITE_ROUTE_AQI_SCORE_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const SCORE_ENDPOINT = import.meta.env.VITE_ROUTE_AQI_SCORE_URL || `${API_BASE_URL}/api/routes/score`
 
 export interface Position {
   label: string
@@ -33,77 +32,90 @@ export interface LocationRoute {
   score?: RouteAqiScore
 }
 
-interface CalculateRoutesResponse {
-  Routes?: Array<{
-    Summary?: {
-      Distance?: number
-      Duration?: number
-    }
-    Legs?: Array<{
-      Geometry?: {
-        LineString?: [number, number][]
-      }
-      Summary?: {
-        Overview?: {
-          Distance?: number
-          Duration?: number
-        }
-      }
-    }>
-  }>
+export const LOCATION_CONFIG = { hasAqiScoring: Boolean(SCORE_ENDPOINT) }
+
+function isOptionalFiniteNumber(value: unknown): boolean {
+  return value === undefined || (typeof value === 'number' && Number.isFinite(value))
 }
 
-export const LOCATION_CONFIG = {
-  configured: Boolean(API_KEY && REGION),
-  missing: [
-    !API_KEY && 'AMAZON_LOCATION',
-    !REGION && 'VITE_AWS_REGION',
-  ].filter((item): item is string => Boolean(item)),
-  hasAqiScoring: Boolean(SCORE_ENDPOINT),
+function isLocationRoute(value: unknown): value is LocationRoute {
+  if (typeof value !== 'object' || value === null) return false
+  const route = value as Record<string, unknown>
+  if (route.summary !== undefined) {
+    if (typeof route.summary !== 'object' || route.summary === null) return false
+    const summary = route.summary as Record<string, unknown>
+    if (!isOptionalFiniteNumber(summary.Distance) || !isOptionalFiniteNumber(summary.Duration)) return false
+  }
+  if (route.legs === undefined) return true
+  if (!Array.isArray(route.legs)) return false
+  return route.legs.every((legValue: unknown) => {
+    if (typeof legValue !== 'object' || legValue === null) return false
+    const leg = legValue as Record<string, unknown>
+    if (leg.geometry !== undefined) {
+      if (typeof leg.geometry !== 'object' || leg.geometry === null) return false
+      const geometry = leg.geometry as Record<string, unknown>
+      if (
+        geometry.LineString !== undefined
+        && (!Array.isArray(geometry.LineString) || !geometry.LineString.every((position: unknown) =>
+          Array.isArray(position)
+          && position.length === 2
+          && typeof position[0] === 'number'
+          && Number.isFinite(position[0])
+          && typeof position[1] === 'number'
+          && Number.isFinite(position[1])))
+      ) return false
+    }
+    if (leg.summary !== undefined) {
+      if (typeof leg.summary !== 'object' || leg.summary === null) return false
+      const legSummary = leg.summary as Record<string, unknown>
+      if (legSummary.Overview !== undefined) {
+        if (typeof legSummary.Overview !== 'object' || legSummary.Overview === null) return false
+        const overview = legSummary.Overview as Record<string, unknown>
+        if (!isOptionalFiniteNumber(overview.Distance) || !isOptionalFiniteNumber(overview.Duration)) return false
+      }
+    }
+    return true
+  })
 }
 
 export async function calculateRoutes(
   origin: Position,
   destination: Position,
 ): Promise<LocationRoute[]> {
-  if (!API_KEY || !REGION) {
-    throw new Error(`Amazon Location is not configured. Add ${LOCATION_CONFIG.missing.join(' and ')} to frontend/.env.local.`)
-  }
-
-  const endpoint = `https://routes.geo.${encodeURIComponent(REGION)}.amazonaws.com/routes/v2/routes?key=${encodeURIComponent(API_KEY)}`
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${API_BASE_URL}/api/location/routes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      Origin: origin.coordinates,
-      Destination: destination.coordinates,
-      TravelMode: 'Car',
-      OptimizeRoutingFor: 'FastestRoute',
-      MaxAlternatives: 2,
-      DepartNow: true,
-      LegGeometryFormat: 'Simple',
-      LegAdditionalFeatures: ['Summary'],
-      InstructionsMeasurementSystem: 'Metric',
+      origin: origin.coordinates,
+      destination: destination.coordinates,
     }),
   })
 
   if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`Amazon Location route request failed (${response.status}): ${detail.slice(0, 240)}`)
+    let detail = ''
+    try {
+      const result: unknown = await response.json()
+      if (typeof result === 'object' && result !== null && 'detail' in result && typeof result.detail === 'string') {
+        detail = result.detail
+      }
+    } catch {
+      detail = ''
+    }
+    throw new Error(detail || `Amazon Location route request failed (${response.status}).`)
   }
 
-  const result = (await response.json()) as CalculateRoutesResponse
-  if (!Array.isArray(result.Routes) || result.Routes.length === 0) {
-    throw new Error('Amazon Location returned no routes for the selected locations.')
+  const result: unknown = await response.json()
+  if (
+    typeof result !== 'object'
+    || result === null
+    || !('routes' in result)
+    || !Array.isArray(result.routes)
+    || result.routes.length === 0
+    || !result.routes.every(isLocationRoute)
+  ) {
+    throw new Error('Amazon Location route service returned an invalid response.')
   }
-
-  return result.Routes.map((route) => ({
-    summary: route.Summary,
-    legs: route.Legs?.map((leg) => ({
-      geometry: leg.Geometry,
-      summary: leg.Summary,
-    })),
-  }))
+  return result.routes
 }
 
 export async function getRouteAqiScore(route: LocationRoute): Promise<RouteAqiScore | null> {

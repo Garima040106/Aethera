@@ -1,17 +1,17 @@
 # Saans Saathi (Aethera)
 
-**An environmental health companion demonstration for Delhi NCR. It presents an illustrative coupled air-weather surrogate, privacy-conscious API examples, and caregiver workflow previews. It does not connect sensors, live environmental feeds, or real alert services.**
+**An environmental health companion demonstration for Delhi NCR. Forecasts and alert workflows remain illustrative; the AQI map can display live CPCB station readings when a data.gov.in API key is configured on the backend.**
 
 Built for [Environmental Hacks](https://www.wemakedevs.org/aws/env) (Bharat Builds Tour, WeMakeDevs x AWS). Track: **Air**.
 Team: **Prometheus**
 
-> **Migration status:** the Express + TypeScript backend in `backend/` is the local API implementation. The Python FastAPI application and its tests are retained as behavioral references. Environmental data and alert workflows are deterministic demonstrations; no AWS resources are deployed, and DynamoDB/Bedrock are disabled by default. See [docs/migration-checklist.md](./docs/migration-checklist.md) for the route/module compatibility matrix.
+> **Migration status:** the Express + TypeScript backend in `backend/` is the local API implementation and has a separate CDK stack for deployment to Lambda behind API Gateway HTTP API. Environmental data and alert workflows are deterministic demonstrations. The Python FastAPI application and tests remain behavioral references. See [docs/migration-checklist.md](./docs/migration-checklist.md) for the route/module compatibility matrix.
 
 ---
 
 ## Architecture Overview
 
-The diagram below shows the product's intended system context. Only the local frontend and Express API are runnable from this repository today; AWS resources and external data feeds are definitions/design references, not deployed or connected services.
+The diagram below shows the product's intended system context. The local frontend and Express API are runnable; AWS resources are not deployed, and live CPCB readings require the optional provider token.
 
 ```
 +---------------------------------------------------------------------------------------------------+
@@ -30,7 +30,7 @@ The diagram below shows the product's intended system context. Only the local fr
                                                   | REST / JSON (Coarse Risk & Forecast Queries)
                                                   v
 +---------------------------------------------------------------------------------------------------+
-|                           BACKEND API LAYER (Express + TypeScript :8000)                          |
+|               BACKEND API LAYER (Express + TypeScript :8000 locally / Lambda in AWS)              |
 |                                                                                                   |
 |   +------------------------+  +--------------------------+  +---------------------------------+   |
 |   | Forecast & Inversion   |  | Multi-Agent Intelligence |  | Deterministic Privacy & Safety  |   |
@@ -44,10 +44,11 @@ The diagram below shows the product's intended system context. Only the local fr
                                          v                                    v
 +------------------------------------------------+   +----------------------------------------------+
 |             ENVIRONMENTAL DATA SOURCES         |   |                 AWS CLOUD LAYER              |
-|                                                |   | (Deployable via CDK / Local Fallback Mode)   |
-| - CPCB / OpenAQ (not connected in local port)  |   | - Bedrock (opt-in; not deployed)              |
+|                                                |   | (Lambda API stack / existing table / local mode)|
+| - CPCB AQI (optional data.gov.in integration)  |   | - Bedrock (opt-in; not deployed)              |
+| - OpenAQ PM2.5 for forecast when configured    |   | - DynamoDB (opt-in; not deployed)             |
 | - NASA FIRMS (not connected in local port)     |   | - Step Functions (CDK definition only)        |
-| - NOAA GFS / IMD (not connected in local port) |   | - DynamoDB (opt-in; not deployed)             |
+| - NOAA GFS / IMD (not connected in local port) |   | - Lambda/API Gateway (CDK definition only)    |
 | - Deterministic Local Replay Fixtures          |   | - SNS (CDK definition only; no messages)      |
 +------------------------------------------------+   +----------------------------------------------+
 ```
@@ -79,12 +80,11 @@ The diagram below shows the product's intended system context. Only the local fr
    - **Care Circle:** Prepares simulated caregiver messages and alert-ladder outcomes.
    - **Master Coordinator:** Provides orchestration helpers and redacted decision records. Bedrock client support is opt-in; model output does not drive safety or escalation decisions.
 
-5. **AWS Serverless Minimal Infrastructure (`infra/`):**
-   - Infrastructure-as-code definitions via AWS CDK; defining a resource does not mean it has been deployed or connected.
-   - CDK defines an S3 ingestion bucket with a 14-day lifecycle; no ingestion is connected.
-   - CDK defines DynamoDB tables; the local app uses memory unless manually enabled.
-   - CDK defines a Step Functions alert ladder and SNS topic; the local simulator sends no messages.
-   - Local deterministic backend operation requires no AWS credentials. Alert/SNS and Step Functions behavior is simulated locally.
+5. **AWS Serverless Backend (`infra/`):**
+   - `AetheraBackendApiStack` bundles the Express Lambda handler and connects it to an API Gateway HTTP API.
+   - The stack imports the existing `AtheraEnvironmentalData` table; it does not create, replace, or delete that table.
+   - Local deterministic backend operation does not require AWS credentials. DynamoDB-backed Lambda deployment does.
+   - The HTTP API currently has no authentication; the frontend demo login is not an API security control. Do not use this public demo stack with sensitive health data.
 
 ---
 
@@ -100,7 +100,7 @@ Set-Location backend
 npm install
 npm run dev
 ```
-The API listens at `http://localhost:8000`. The app factory is also exported through `backend/src/lambda.ts` for a future API Gateway HTTP API deployment; no Lambda is created automatically.
+The API listens at `http://localhost:8000`. Its Lambda proxy handler is in `backend/src/lambda.ts`.
 
 ### 2. Start the React Frontend
 ```powershell
@@ -124,6 +124,20 @@ npm run build
 
 Backend configuration can be supplied through `backend/.env.local`, `backend/.env`, or process environment variables; these local files are git-ignored. DynamoDB and Bedrock remain disabled by default unless enabled in the backend environment.
 
+### Deploy the backend API to AWS
+
+The CDK app deploys only the separate `AetheraBackendApiStack` and imports the existing table. It does not deploy the legacy infrastructure stack or create a new DynamoDB table.
+
+```powershell
+Set-Location infra
+npm install
+npm run build
+npm run synth:api -- -c corsOrigins=https://your-frontend.example
+npm run deploy:api -- -c corsOrigins=https://your-frontend.example
+```
+
+Configure AWS CLI credentials and bootstrap CDK in the target account/region first. The stack defaults to `us-east-1`, table `AtheraEnvironmentalData`, and local Vite CORS origins; pass the actual deployed frontend origin with `-c corsOrigins=...`. After deployment, set the frontend's `VITE_API_BASE_URL` to the `BackendApiUrl` stack output and rebuild it. The API has no authentication and should only be used as an explicitly approved demo; do not send real personal or health data.
+
 The frontend's demo login is stored in browser `localStorage`; it is a navigation/demo convenience, not authentication or access control. Never use it to protect production health data.
 
 ### API endpoints
@@ -131,6 +145,8 @@ The frontend's demo login is stored in browser `localStorage`; it is a navigatio
 | Method | Endpoint |
 |---|---|
 | GET | `/health` |
+| GET | `/api/aqi/stations` |
+| GET | `/api/location/search?q=Connaught%20Place` |
 | GET | `/api/forecast?area=noida&hours=72` |
 | GET | `/api/environmental-data?area=noida&limit=10` |
 | GET | `/api/inversion?area=noida` |
@@ -138,14 +154,18 @@ The frontend's demo login is stored in browser `localStorage`; it is a navigatio
 | GET | `/api/metrics` |
 | GET | `/api/agents/status` |
 | GET | `/api/decisions` |
+| POST | `/api/location/routes` |
+| POST | `/api/routes/score` |
 | POST | `/api/events/health` |
 | POST | `/api/alerts/simulate` |
 | POST | `/api/scenarios/compare` |
 
 ### Optional AWS integrations (manual activation only)
 
-* **DynamoDB:** to use the existing `AtheraEnvironmentalData` table, set `ENABLE_DYNAMODB=true`, `DYNAMODB_TABLE=AtheraEnvironmentalData`, and `AWS_REGION=us-east-1` in `backend/.env.local` (or export them in the backend process environment). The table must use string partition and sort keys named `pk` and `sk`. The backend uses the standard AWS SDK credential provider chain; configure an AWS CLI profile or runtime role, and grant `dynamodb:PutItem`, `dynamodb:GetItem`, and `dynamodb:Query` on that table. Environmental forecast snapshots, alert states, and redacted decision records use distinct `pk` namespaces. `GET /api/environmental-data?area=noida&limit=10` reads recent stored forecast snapshots. DynamoDB errors are returned as service-unavailable errors; the app does not silently fall back to memory after a failed operation.
+* **DynamoDB:** to use the existing `AtheraEnvironmentalData` table, set `ENABLE_DYNAMODB=true`, `DYNAMODB_TABLE=AtheraEnvironmentalData`, `AWS_REGION=us-east-1`, and locally `AWS_PROFILE=nickhilverma` in `backend/.env.local` (or export them in the backend process environment). The verified table schema uses string partition and sort keys named `PK` and `SK`. The backend uses the AWS SDK for JavaScript v3 `DynamoDBDocumentClient`; local credentials come from the selected AWS CLI profile and production credentials from the Lambda execution role. Grant `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:UpdateItem`, `dynamodb:DeleteItem`, and `dynamodb:Query` on that table only. Environmental forecast snapshots, alert states, and redacted decision records use distinct `PK` namespaces. `GET /api/environmental-data?area=noida&limit=10` reads recent stored forecast snapshots, and `GET /health/dynamodb` verifies table access with a read-only `DescribeTable`. DynamoDB errors are returned as service-unavailable errors; the app does not silently fall back to memory after a failed operation.
 * **Bedrock:** set `ENABLE_BEDROCK=true`, `AWS_REGION`, and `BEDROCK_MODEL_ID`, then configure the standard AWS credential provider chain and grant `bedrock:Converse` for that model. The deterministic local mode remains the default. Agent-generated text is not used to make authorization, consent, health escalation, or emergency decisions.
+* **Amazon Location:** backend `/api/location/search` and `/api/location/routes` use AWS SDK for JavaScript v3 (`GeoPlacesClient` and `GeoRoutesClient`) with the local AWS credential profile or Lambda execution role; the Lambda role needs `geo-places:SearchText` and `geo-routes:CalculateRoutes`. Frontend map rendering uses MapLibre with OpenStreetMap tiles; no AWS map key is needed.
+* **Delhi CPCB AQI and corridors:** set `CPCB_API_KEY` (or `DATA_GOV_IN_API_KEY`) in the ignored `backend/.env.local` and optionally set `CPCB_AQI_RESOURCE_ID`. `/api/aqi/stations` returns coordinate-bearing Delhi readings; `/api/routes/score` evaluates route-adjacent recent readings using Indian CPCB AQI. OpenAQ remains an optional complementary PM2.5 input to forecasts. NASA FIRMS is a satellite fire-hotspot source, not an AQI feed.
 
 No `cdk deploy` is part of this setup. For a future deployment, review `infra/lib/aethera-stack.ts`, add and review explicit Lambda/API Gateway resources and least-privilege grants, deploy only through a separately approved process, configure the backend environment and IAM role, then set `VITE_API_BASE_URL` to the API Gateway URL and rebuild/redeploy the static frontend. `docs/migration-checklist.md` records the CDK resource keys, endpoint contracts, and remaining limitations.
 

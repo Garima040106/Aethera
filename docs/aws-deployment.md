@@ -1,91 +1,108 @@
-# Saans Saathi: AWS Architecture, Deployment & Cost Review
+# Aethera Backend on AWS Lambda
 
-## 1. Environment Inspection & Authorization Report
+The `AetheraBackendApiStack` deploys the existing Express + TypeScript API as an AWS Lambda
+function behind an API Gateway HTTP API. It imports the existing `AtheraEnvironmentalData` table
+and does not create, replace, or delete DynamoDB tables.
 
-In accordance with Phase 5.1 requirements, an environmental audit was executed on the host system:
+## Prerequisites
 
-- **AWS CLI Status:** `aws` CLI is not installed on the system PATH.
-- **AWS STS Identity:** Unauthenticated / No credentials configured in environment.
-- **Operational Mode:** **Stage 5.7 Local-First Fallback Active.**
-  All capabilities (FastAPI backend, 72-hour coupled surrogate forecasting, inversion index, plume tracking, Cedar policy consent engine, and multi-agent intelligence) run locally with zero AWS credential requirements.
-- **Bedrock Mode:** Seamless deterministic local provider active with full traceability.
+- Node.js 20+ and npm
+- AWS CLI credentials for the target account, with permissions to deploy CDK/CloudFormation, Lambda,
+  API Gateway, IAM roles/policies, and CloudWatch Logs
+- CDK bootstrap completed in the deployment account and region
+- An existing DynamoDB table named `AtheraEnvironmentalData` in `us-east-1`, with string partition
+  and sort keys `PK` and `SK`
+- An approved frontend origin for CORS
 
----
+The Lambda execution role receives only `dynamodb:PutItem`, `dynamodb:GetItem`,
+`dynamodb:UpdateItem`, `dynamodb:DeleteItem`, and `dynamodb:Query` permissions on the imported
+table ARN, plus `geo-places:SearchText` for place search and `geo-routes:CalculateRoutes` for route
+calculation. Both Location operations currently use resource `*`. It does not need
+`dynamodb:DescribeTable` for the database health check. AWS
+credentials are not embedded in the bundle; the AWS SDK uses the Lambda execution role.
 
-## 2. Infrastructure as Code: Minimal Serverless Footprint (`infra/`)
+## Synthesize and deploy
 
-To support live deployment upon credential provisioning, a minimal, cost-controlled AWS CDK stack (`infra/lib/aethera-stack.ts`) is provided.
+From PowerShell:
 
-### 2.1 Provisioned Services
-
-| Service | Resource Name | Purpose | Billing Mode & Cost Driver |
-|---|---|---|---|
-| **Amazon S3** | `SaansSaathiDataBucket` | Ingestion cache for CPCB & FIRMS telemetry | Standard S3 ($0.023/GB), 14-day auto-purge lifecycle |
-| **Amazon DynamoDB** | `AlertRecordsTable` | Idempotent alert ladder state and event history | **Pay-per-Request** ($0 idle charges) |
-| **Amazon DynamoDB** | `DecisionsAuditTable` | Redacted agent reasoning and audit records | **Pay-per-Request** ($0 idle charges) |
-| **Amazon SNS** | `CaregiverAlertTopic` | Calm SMS / Email notifications to Rohan | Free tier includes 100 SMS & 1,000,000 pushes |
-| **AWS Step Functions** | `SaansSaathi-AlertLadder` | 5-stage deterministic alert escalation workflow | Express/Standard state machine ($0.025/1,000 runs) |
-| **Amazon Bedrock** | `anthropic.claude-3-5-sonnet` | Grounded multi-agent reasoning and explanation | Pay-per-token inference (only on active triggers) |
-| **Amazon CloudWatch** | `/aws/vendedlogs/states/AlertLadder` | Operational logs and audit tracing | 14-day retention rule applied |
-
----
-
-## 3. Strict Architecture Exclusions (Cost Control)
-
-To strictly enforce Section 5.6 of the Master Prompt, the following expensive services are **explicitly excluded**:
-
-- **NO WRF-Chem HPC clusters** (ParallelCluster, Slurm, MPI). The MVP executes our coupled surrogate solver.
-- **NO Persistent EC2 instances** (t3, m5, etc.). All compute is serverless Lambda / local.
-- **NO Always-on SageMaker Inference Endpoints** (saves ~$50–$150/month).
-- **NO AWS NAT Gateways** (saves ~$32.40/month per gateway).
-- **NO Amazon FSx for Lustre or large shared storage**.
-
----
-
-## 4. Cost Assessment & Budget Assumptions
-
-- **Expected monthly idle charge:** **$0.00** (All components are serverless pay-per-request).
-- **Demo workload estimate (100 runs):**
-  - DynamoDB writes/reads: < $0.01
-  - Step Functions transitions: < $0.02
-  - Bedrock model inferences (approx. 50 calls): ~$0.15
-  - S3 storage (under 50 MB): < $0.01
-  - **Total Estimated Demo Cost:** **< $0.20** (Fully covered by standard $200 AWS builder credits).
-
----
-
-## 5. Live Deployment Steps (When AWS CLI is Installed)
-
-```bash
-# 1. Configure credentials
-aws configure
-
-# 2. Verify identity
-aws sts get-caller-identity
-
-# 3. Navigate to infra and install CDK dependencies
-cd infra
+```powershell
+Set-Location infra
 npm install
+npm run build
 
-# 4. Synthesize CloudFormation template
-npx cdk synth
+# First-time setup for the account/region, if CDK has not already been bootstrapped:
+npm run cdk -- bootstrap
 
-# 5. Review proposed resource changes
-npx cdk diff
+# Review the generated CloudFormation template and planned changes:
+npm run synth:api -- -c corsOrigins=https://your-frontend.example
+npm run cdk -- diff AetheraBackendApiStack -c corsOrigins=https://your-frontend.example
 
-# 6. Deploy the minimal stack
-npx cdk deploy
+# Deploy only after reviewing the diff:
+npm run deploy:api -- -c corsOrigins=https://your-frontend.example
 ```
 
----
+The stack defaults to the `us-east-1` region and local Vite origins. Pass the deployed frontend
+origin using `-c corsOrigins=...`; multiple origins can be comma-separated. Set `CDK_DEFAULT_REGION`
+and configure AWS CLI credentials for the target account before synthesis/deployment. The output
+`BackendApiUrl` is the API base URL; set `VITE_API_BASE_URL` to it and rebuild/redeploy the frontend.
 
-## 6. Teardown Procedure (Complete Clean-up)
+## API routes and DynamoDB records
 
-To ensure zero ongoing charges after the hackathon demonstration:
+The HTTP API sends all paths to the existing Lambda proxy handler. Forecast requests persist a
+snapshot and `GET /api/environmental-data?area=noida&limit=10` reads recent snapshots. Alerts and
+redacted decision audits are stored in the same table using separate `PK` namespaces and `SK`
+sort-key prefixes. `GET /health/dynamodb` performs a real `GetItem` against the table and returns
+healthy only when DynamoDB access succeeds. No raw health
+measurements are persisted by these repositories.
 
-```bash
-cd infra
-npx cdk destroy --force
+## Local DynamoDB development
+
+Set the following variables in the ignored `backend/.env.local` file. The backend loads this file
+before creating the SDK client:
+
+```dotenv
+ENABLE_DYNAMODB=true
+AWS_PROFILE=nickhilverma
+AWS_REGION=us-east-1
+DYNAMODB_TABLE=AtheraEnvironmentalData
 ```
 
-All DynamoDB tables, S3 buckets, and Step Functions workflows have `RemovalPolicy.DESTROY` configured with `autoDeleteObjects: true` to prevent orphaned billable artifacts.
+The profile name selects credentials from the local AWS CLI profile chain; do not put access keys in
+the frontend or environment file. Run the backend from `backend` with `npm run dev`, then verify
+actual table access with:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health/dynamodb
+```
+
+The endpoint uses a read-only `GetItem` for a reserved health-check key with the verified uppercase
+`PK`/`SK` schema; it does not create or modify records. Forecast requests, decisions, and health
+events exercise the existing application repositories. For production, omit `AWS_PROFILE` and
+grant the Lambda execution role the table-scoped permissions listed above.
+
+## Live Delhi AQI and place search
+
+The backend reads Delhi station data from the data.gov.in CPCB resource when
+`DATA_GOV_IN_API_KEY` is set. For local development, keep it only in the ignored
+`backend/.env.local` file and use the default resource or set `CPCB_AQI_RESOURCE_ID`. Never put
+this token or AWS credentials in frontend environment variables. Lambda does not receive the
+data.gov.in token from the CDK stack; configure it through an approved protected runtime-secret
+process before expecting live AQI data in production. Without it, the endpoint explicitly reports
+that the station feed is unavailable.
+
+Backend place search uses IAM/SigV4 through the AWS SDK credential chain: the named local profile
+for development and the Lambda execution role in production. The CDK grants
+`geo-places:SearchText` and `geo-routes:CalculateRoutes`; it does not grant permission to create
+or modify Location resources. Route calculation runs through `GeoRoutesClient` and
+`CalculateRoutesCommand` in the backend, not a direct browser request.
+
+## Important security limitation
+
+The demo API has no authentication or authorization. The role-aware frontend sign-in is
+browser-only and does not protect API routes. CORS restricts browser origins but is not an access
+control mechanism; anyone who obtains the API URL can call the API directly. Deploy this stack only
+for an approved demo with non-sensitive data. Add a real API authorizer and production data controls
+before using it with personal or health information.
+
+This document describes deployable infrastructure. No AWS resources are created until the CDK
+deployment command is explicitly run and approved.

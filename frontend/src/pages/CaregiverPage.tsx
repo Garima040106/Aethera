@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { api } from "../services/api";
 import type { AlertSimulateResponse } from "../services/api";
+import DashboardAirMapRoute from "../components/DashboardAirMapRoute";
 
 function AetheraIcon() {
   return (
@@ -284,6 +285,10 @@ export default function CaregiverPage() {
           coordinates are forbidden by Cedar policy unless an SOS event is
           confirmed.
         </p>
+      </div>
+
+      <div className="mx-auto mb-6 w-full max-w-[1200px]">
+        <DashboardAirMapRoute />
       </div>
 
       <section

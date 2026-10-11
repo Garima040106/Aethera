@@ -22,8 +22,11 @@ export class BackendApiStack extends cdk.Stack {
     }
 
     const table = dynamodb.Table.fromTableName(this, 'ExistingEnvironmentalDataTable', props.tableName)
+    const backendRoot = path.resolve(__dirname, '../../../backend')
     const handler = new NodejsFunction(this, 'AetheraBackendHandler', {
-      entry: path.resolve(__dirname, '../../backend/src/lambda.ts'),
+      entry: path.join(backendRoot, 'src/lambda.ts'),
+      projectRoot: backendRoot,
+      depsLockFilePath: path.join(backendRoot, 'package-lock.json'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_22_X,
       timeout: cdk.Duration.seconds(25),
@@ -42,8 +45,22 @@ export class BackendApiStack extends cdk.Stack {
     })
 
     handler.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query'],
+      actions: [
+        'dynamodb:PutItem',
+        'dynamodb:GetItem',
+        'dynamodb:UpdateItem',
+        'dynamodb:DeleteItem',
+        'dynamodb:Query',
+      ],
       resources: [table.tableArn],
+    }))
+
+    handler.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'geo-places:SearchText',
+        'geo-routes:CalculateRoutes',
+      ],
+      resources: ['*'],
     }))
 
     const api = new apigwv2.HttpApi(this, 'AetheraHttpApi', {

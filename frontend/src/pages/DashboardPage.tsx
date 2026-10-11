@@ -10,6 +10,7 @@ import {
   ShieldAlertIcon,
   WindIcon,
 } from '../components/Icons'
+import DashboardAirMapRoute from '../components/DashboardAirMapRoute'
 import { api } from '../services/api'
 import type { ForecastResponse } from '../services/api'
 import { getDemoUser } from '../services/demoAuth'
@@ -182,6 +183,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        <DashboardAirMapRoute />
 
         {familyMembers.length > 0 && (
           <section className="elder-family-card" aria-label="Alert circle">
