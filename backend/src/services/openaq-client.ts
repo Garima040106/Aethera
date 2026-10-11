@@ -3,7 +3,7 @@ import type { Area } from '../data/fixtures.js'
 
 interface OpenAqSensor {
   id?: number
-  parameter?: { name?: string }
+  parameter?: { name?: string; units?: string }
 }
 
 interface OpenAqLocation {
@@ -35,6 +35,20 @@ export interface LatestPm25Reading {
   value: number
   observedAt: string
   source: string
+  pollutants: Record<string, { value: number; unit: string; observedAt: string }>
+  liveAqi: number
+  liveAqiCategory: string
+  dominantPollutant: string
+}
+
+const AQI_BREAKPOINTS: Record<string, [number, number, number, number, string][]> = {
+  pm25: [[0, 30, 0, 50, 'Good'], [30, 60, 51, 100, 'Satisfactory'], [60, 90, 101, 200, 'Moderate'], [90, 120, 201, 300, 'Poor'], [120, 250, 301, 400, 'Very Poor'], [250, 500, 401, 500, 'Severe']],
+  pm10: [[0, 50, 0, 50, 'Good'], [50, 100, 51, 100, 'Satisfactory'], [100, 250, 101, 200, 'Moderate'], [250, 350, 201, 300, 'Poor'], [350, 430, 301, 400, 'Very Poor'], [430, 600, 401, 500, 'Severe']],
+  no2: [[0, 40, 0, 50, 'Good'], [40, 80, 51, 100, 'Satisfactory'], [80, 180, 101, 200, 'Moderate'], [180, 280, 201, 300, 'Poor'], [280, 400, 301, 400, 'Very Poor'], [400, 800, 401, 500, 'Severe']],
+  so2: [[0, 40, 0, 50, 'Good'], [40, 80, 51, 100, 'Satisfactory'], [80, 380, 101, 200, 'Moderate'], [380, 800, 201, 300, 'Poor'], [800, 1600, 301, 400, 'Very Poor'], [1600, 2400, 401, 500, 'Severe']],
+  o3: [[0, 50, 0, 50, 'Good'], [50, 100, 51, 100, 'Satisfactory'], [100, 168, 101, 200, 'Moderate'], [168, 208, 201, 300, 'Poor'], [208, 748, 301, 400, 'Very Poor'], [748, 1000, 401, 500, 'Severe']],
+  co: [[0, 1, 0, 50, 'Good'], [1, 2, 51, 100, 'Satisfactory'], [2, 10, 101, 200, 'Moderate'], [10, 17, 201, 300, 'Poor'], [17, 34, 301, 400, 'Very Poor'], [34, 50, 401, 500, 'Severe']],
+  nh3: [[0, 200, 0, 50, 'Good'], [200, 400, 51, 100, 'Satisfactory'], [400, 800, 101, 200, 'Moderate'], [800, 1200, 201, 300, 'Poor'], [1200, 1800, 301, 400, 'Very Poor'], [1800, 2400, 401, 500, 'Severe']],
 }
 
 export class OpenAqClient {
@@ -77,6 +91,28 @@ export class OpenAqClient {
         || result.sensor?.parameter?.name === 'pm25'
         || (result.sensorsId !== undefined && pm25SensorIds.includes(result.sensorsId))
       ))
+      const sensorMetadata = new Map(
+        (nearest.sensors ?? [])
+          .filter((sensor): sensor is OpenAqSensor & { id: number; parameter: { name: string; units?: string } } => (
+            typeof sensor.id === 'number' && typeof sensor.parameter?.name === 'string'
+          ))
+          .map((sensor) => [sensor.id, sensor]),
+      )
+      const pollutants: LatestPm25Reading['pollutants'] = {}
+      for (const result of latest.results ?? []) {
+        const sensor = result.sensorsId !== undefined ? sensorMetadata.get(result.sensorsId) : undefined
+        const parameter = result.parameter ?? result.sensor?.parameter?.name ?? sensor?.parameter.name
+        if (!parameter || typeof result.value !== 'number' || !Number.isFinite(result.value) || result.value < 0) continue
+        const timestamp = typeof result.datetime === 'string'
+          ? result.datetime
+          : result.datetime?.utc ?? result.period?.datetimeFrom?.utc
+        if (!timestamp || Number.isNaN(Date.parse(timestamp))) continue
+        pollutants[parameter] = {
+          value: result.value,
+          unit: result.unit ?? sensor?.parameter.units ?? 'µg/m³',
+          observedAt: new Date(timestamp).toISOString(),
+        }
+      }
       const value = reading?.value
       const observedAt = typeof reading?.datetime === 'string'
         ? reading.datetime
@@ -90,11 +126,29 @@ export class OpenAqClient {
       ) {
         throw new Error('OpenAQ response did not contain a valid PM2.5 reading')
       }
+      const subIndices = Object.entries(pollutants)
+        .map(([parameter, pollutant]) => {
+          const breakpoint = AQI_BREAKPOINTS[parameter]?.find(([low, high]) => pollutant.value >= low && pollutant.value <= high)
+          if (!breakpoint) return undefined
+          const [low, high, aqiLow, aqiHigh, category] = breakpoint
+          return {
+            parameter,
+            aqi: Math.round(aqiLow + ((aqiHigh - aqiLow) / (high - low)) * (pollutant.value - low)),
+            category,
+          }
+        })
+        .filter((item): item is { parameter: string; aqi: number; category: string } => item !== undefined)
+      const dominant = subIndices.sort((left, right) => right.aqi - left.aqi)[0]
+      if (!dominant) throw new Error('OpenAQ response did not contain a supported pollutant reading')
 
       return {
         value,
         observedAt: new Date(observedAt).toISOString(),
         source: `OpenAQ location ${nearest.id}${nearest.name ? ` (${nearest.name})` : ''}`,
+        pollutants,
+        liveAqi: dominant.aqi,
+        liveAqiCategory: dominant.category,
+        dominantPollutant: dominant.parameter,
       }
     } finally {
       clearTimeout(timeout)

@@ -19,6 +19,12 @@ export class EnvironmentalService {
       model_version: 'SaansSaathi-CoupledSurrogate-v1.2',
       source_provenance: {
         cpcb: latestPm25?.source ?? 'Deterministic sample fixture; OpenAQ key not configured',
+        live_aqi: latestPm25
+          ? `${latestPm25.liveAqi} (${latestPm25.liveAqiCategory}; dominant pollutant: ${latestPm25.dominantPollutant})`
+          : 'Unavailable',
+        live_pollutants: latestPm25
+          ? Object.entries(latestPm25.pollutants).map(([name, reading]) => `${name}=${reading.value} ${reading.unit}`).join(', ')
+          : 'Unavailable',
         weather: 'Illustrative NOAA GFS / IMD source attribution; no live feed connected',
         fires: 'NASA FIRMS sample fixture; not a live satellite feed',
         model: latestPm25
@@ -28,8 +34,8 @@ export class EnvironmentalService {
       horizon_hours: hours,
       points,
       summary: {
-        aqi_now: points[0]!.aqi_coupled,
-        category_now: points[0]!.aqi_category,
+        aqi_now: latestPm25?.liveAqi ?? points[0]!.aqi_coupled,
+        category_now: latestPm25?.liveAqiCategory ?? points[0]!.aqi_category,
         peak_aqi: peak.aqi_coupled,
         peak_category: peak.aqi_category,
         peak_hour: peak.hour,

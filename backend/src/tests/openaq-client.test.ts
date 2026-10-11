@@ -18,6 +18,7 @@ describe('OpenAQ client', () => {
         results: [{
           sensorsId: 123,
           value: 42,
+              parameter: 'pm25',
           datetime: { utc: '2026-10-11T06:00:00Z' },
         }],
       }), { status: 200 }))
@@ -27,6 +28,10 @@ describe('OpenAQ client', () => {
       value: 42,
       observedAt: '2026-10-11T06:00:00.000Z',
       source: 'OpenAQ location 8118 (Nearest Noida Station)',
+      pollutants: { pm25: { value: 42, unit: 'µg/m³', observedAt: '2026-10-11T06:00:00.000Z' } },
+      liveAqi: 71,
+      liveAqiCategory: 'Satisfactory',
+      dominantPollutant: 'pm25',
     })
     expect(fetcher).toHaveBeenCalledWith(
       'https://api.openaq.org/v3/locations?coordinates=28.628,77.3649&radius=25000&limit=100',
