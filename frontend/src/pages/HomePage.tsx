@@ -334,10 +334,10 @@ export default function HomePage() {
               <span className="block italic text-[#80553f]">make the next step clear.</span>
             </h2>
             <p className="mt-5 max-w-lg text-sm leading-7 text-[#66675f]">
-              A consent-aware alert ladder is designed to check in first, allow time to respond, and give caregivers calm, actionable context instead of raw personal data.
+              A consent-aware alert ladder is designed to check in first, allow time to respond, and give advanced users calm, actionable context instead of raw personal data.
             </p>
             <Link to="/login" className="group mt-7 inline-flex items-center gap-2 text-sm text-[#19191b] no-underline">
-              See the caregiver experience <ArrowRightIcon className="transition-transform group-hover:translate-x-1" size={16} />
+              See the Advanced User experience <ArrowRightIcon className="transition-transform group-hover:translate-x-1" size={16} />
             </Link>
           </div>
           <div className="relative">

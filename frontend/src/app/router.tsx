@@ -4,6 +4,7 @@ import SiteLayout from '../components/layout/SiteLayout'
 import PublicLayout from '../components/PublicLayout'
 import HomePage from '../pages/HomePage'
 import LoginPage from '../pages/LoginPage'
+import LoginChoicePage from '../pages/LoginChoicePage'
 import DashboardPage from '../pages/DashboardPage'
 import CompanionPage from '../pages/CompanionPage'
 import CaregiverPage from '../pages/CaregiverPage'
@@ -16,9 +17,11 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
     ],
   },
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <LoginChoicePage /> },
+  { path: '/elder-login', element: <LoginPage role="elder" /> },
+  { path: '/caregiver-login', element: <LoginPage role="caregiver" /> },
   {
-    element: <ProtectedRoute />,
+    element: <ProtectedRoute role="elder" />,
     children: [
       {
         element: <SiteLayout />,
@@ -26,6 +29,17 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/routes', element: <RoutePlannerPage /> },
           { path: '/companion', element: <CompanionPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    element: <ProtectedRoute role="caregiver" />,
+    children: [
+      {
+        element: <SiteLayout />,
+        children: [
+          { path: '/caregiver-dashboard', element: <CaregiverPage /> },
           { path: '/caregiver', element: <CaregiverPage /> },
         ],
       },
