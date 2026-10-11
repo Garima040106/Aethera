@@ -107,6 +107,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
   height: 100vh;
   min-height: 0;
   overflow: hidden;
+  grid-template-rows: var(--header-h) minmax(0, 1fr);
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
 }
 
@@ -274,6 +275,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 }
 .app-shell > main {
   min-height: 0;
+  height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 .nav-section { display: flex; flex-direction: column; gap: 2px; }
 .nav-section-label {
@@ -618,9 +623,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
     var(--bg);
   color: var(--text);
 }
-.elder-dashboard {
-  overflow: visible !important;
-}
+.elder-dashboard { overflow-y: auto !important; }
 .elder-dashboard > div {
   width: min(100%, 1060px);
 }
