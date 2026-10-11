@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "home": "Aethera home",
+    "forecast": "Forecast",
+    "companion": "Companion",
+    "careCircle": "Care circle",
+    "openDashboard": "Open dashboard"
+  },
+  "hero": {
+    "eyebrow": "DELHI NCR · AIR AND HEALTH",
+    "headline": "See the bad air coming. Look after the people breathing it.",
+    "description": "Aethera forecasts Delhi NCR air quality for the next 72 hours, with weather and smoke affecting each other. Then it watches over the people most at risk, on their own phone, and tells their family when it matters.",
+    "openDashboard": "Open the dashboard",
+    "seePhoneApp": "See the phone app",
+    "disclaimer": "Support tool, not a medical device. In an emergency call 112."
+  },
+  "forecastPreview": {
+    "tomorrow": "Tomorrow, 6:00 AM",
+    "sampleData": "Sample data",
+    "inversion": "Inversion",
+    "strong": "Strong",
+    "smokeReaches": "Smoke reaches NCR in",
+    "about14h": "about 14 h",
+    "messageTo": "Message to Kamla",
+    "messageHindi": "माँ, आज सुबह बाहर टहलने न जाएँ। हवा बहुत खराब है। घर के अंदर हल्का टहल लें।",
+    "messageTranslation": "Today, skip the walk outside. The air is very bad. A light walk indoors is better.",
+    "privacyNote": "Her health readings stay on her phone."
+  },
+  "forecastSection": {
+    "eyebrow": "THE FORECAST",
+    "headline": "Weather and smoke change each other. The forecast should too.",
+    "para1": "When smoke from stubble burning gets trapped near the ground by an inversion, it blocks sunlight, cools the surface and slows the wind, which traps more smoke. Aethera steps weather and pollution forward together, hour by hour, for 72 hours.",
+    "para2": "The dashboard shows inversion strength, the path of each fire plume and when it arrives, with the source and age of every number.",
+    "exploreLink": "Explore the forecast"
+  },
+  "diagram": {
+    "weather": "Weather",
+    "temperature": "Temperature",
+    "wind": "Wind",
+    "boundaryLayer": "Boundary layer height",
+    "traps": "traps →",
+    "alters": "← alters",
+    "smoke": "Smoke",
+    "pm25": "PM2.5 and PM10",
+    "ozone": "Ozone",
+    "nox": "NOx",
+    "eachHour": "Each hour, for 72 hours",
+    "aqiForecast": "AQI forecast for Delhi NCR",
+    "withInversion": "With inversion strength and plume arrival time"
+  },
+  "companionSection": {
+    "eyebrow": "THE COMPANION",
+    "headline": "Health checks that never leave the phone.",
+    "para1": "Heart rate, blood oxygen, temperature, activity, sleep and falls are read and understood on the device. It learns what is normal for one person and flags heat stress, dehydration, fatigue and breathing trouble.",
+    "para2": "Only a coarse risk level and area can leave the phone, and only when the user turns sharing on. Alerts are in Hindi or English and can be read aloud.",
+    "exploreLink": "Explore the companion"
+  },
+  "riskPreview": {
+    "todayRisk": "Today's risk",
+    "sampleData": "Sample data",
+    "heat": "Heat",
+    "breathing": "Breathing",
+    "heart": "Heart",
+    "low": "Low",
+    "high": "High",
+    "medium": "Medium",
+    "privacyNote": "Calculated on this phone. Works with no network."
+  },
+  "careSection": {
+    "eyebrow": "THE CARE CIRCLE",
+    "headline": "One calm message to family, not thirty alerts.",
+    "para1": "Agents decide what to do from the forecast, her readings and whether she replies. They start with her, then her son, then an emergency contact. She can cancel before an SOS goes out.",
+    "para2": "Every decision is logged, so anyone can open \"Why did I get this alert?\" and see the steps.",
+    "exploreLink": "Explore the care circle",
+    "steps": {
+      "nudgeKamla": {
+        "title": "Nudge Kamla",
+        "description": "Stay in, wear a mask, drink water."
+      },
+      "askOk": {
+        "title": "Ask \"Are you ok?\"",
+        "description": "Waits for her reply."
+      },
+      "messageSon": {
+        "title": "Message her son",
+        "description": "Risk level only, in plain words."
+      },
+      "sos": {
+        "title": "SOS to emergency contact",
+        "description": "After a 30 second cancel countdown. Location only if she allowed it."
+      }
+    }
+  },
+  "footer": {
+    "brand": "Aethera · Team Prometheus",
+    "built": "Built for Environmental Hacks, Air track. Powered by AWS architecture.",
+    "disclaimer": "Support tool, not a medical device. Values on these screens are sample data for the design preview."
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "en": "EN",
+    "hi": "हि",
+    "pa": "ਪੰ"
+  },
+  "dashboard": {
+    "title": "Delhi NCR",
+    "subtitle": "Real-time environmental intelligence",
+    "updating": "Updating...",
+    "areaNoida": "Noida Sector 62",
+    "areaAnandVihar": "Anand Vihar, Delhi",
+    "areaPunjabiBagh": "Punjabi Bagh, Delhi",
+    "areaGurugram": "Gurugram Sector 51",
+    "offlineCached": "Offline Cached Telemetry",
+    "liveApi": "Live Connected API :8000",
+    "updatingForecast": "Updating coupled weather-pollution forecast and plume trajectories.",
+    "connectionNotice": "Connection Notice",
+    "servingFallback": "Serving verified fallback fixtures.",
+    "currentConditions": "Current Conditions",
+    "aqiNow": "AQI Now",
+    "category": "Category",
+    "atmosphericConditions": "Atmospheric Conditions",
+    "inversionStrength": "Inversion Strength",
+    "ventilationCoef": "Ventilation Coef.",
+    "envRiskFactors": "Environmental Risk Factors",
+    "plumeForecast": "Plume Forecast",
+    "fireSources": "Fire Sources",
+    "active": "active",
+    "windDirection": "Wind Direction",
+    "arrivalEst": "Arrival Est.",
+    "legend": {
+      "airQualityIndex": "Air Quality Index",
+      "healthy": "Healthy (0-50)",
+      "moderate": "Moderate (51-100)",
+      "unhealthy": "Unhealthy (101-200)",
+      "severe": "Severe (201+)",
+      "selectedRoute": "Selected Route"
+    }
+  },
+  "companion": {
+    "eyebrow": "PERSONAL COMPANION",
+    "headline": "Health support, designed for the person carrying it.",
+    "description": "A preview of Kamla's phone experience: Hindi-first family guidance, simple check-ins, personal risk indicators, and offline privacy safeguards.",
+    "simulator": {
+      "title": "On-Device Wearable Anomaly Simulator:",
+      "distress": "Simulate Respiratory Distress (HR 96, SpO2 93%)",
+      "baseline": "Normal Baseline (HR 72, SpO2 98%)"
+    },
+    "actionResult": "Action Result",
+    "dispatchedToRohan": "Dispatched to Rohan",
+    "privacyNote": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with caregiver Rohan under explicit consent rules.",
+    "worksOffline": "Works offline",
+    "today6am": "Today 6:00 AM",
+    "live": "Live",
+    "messageEnglish": "Kamla ji, please skip your morning walk outside today. The air is severe. A gentle walk indoors is much safer.",
+    "messageHindi": "माँ, आज सुबह बाहर टहलने न जाएँ। हवा बहुत खराब है। घर के अंदर हल्का टहल लें।",
+    "listen": "Listen",
+    "speaking": "Speaking...",
+    "areYouOk": "Are you ok?",
+    "breathingHarder": "Your breathing looks harder than usual.",
+    "imOkay": "I am okay",
+    "needHelp": "Need help",
+    "disclaimer": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with caregiver Rohan under explicit consent rules."
+  },
+  "caregiver": {
+    "eyebrow": "CARE CIRCLE",
+    "headline": "Know when someone you love needs you.",
+    "description": "A caregiver view designed to make urgent information clear while respecting the privacy of the person receiving care. One calm notification in plain words, not 30 confusing charts.",
+    "sharing": {
+      "riskLevel": "Risk level",
+      "riskValue": "Shared (HIGH)",
+      "generalArea": "General area",
+      "generalAreaValue": "Shared (Noida Sector 62)",
+      "heartRate": "Heart rate and oxygen",
+      "heartRateValue": "Stays on her phone",
+      "exactLocation": "Exact location",
+      "exactLocationValue": "Only if she sends an SOS"
+    },
+    "callMaa": "Call Maa",
+    "connectingCall": "Connecting call to Maa (+91 98XXX XXXXX)... In emergency dispatch 112."
+  }
+}

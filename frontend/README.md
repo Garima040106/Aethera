@@ -1,5 +1,17 @@
 # React + TypeScript + Vite
 
+## Demo dashboard access
+
+Run the frontend with `npm run dev`, open the local Vite URL, and select **Open your dashboard**.
+The dashboard redirects to the sign-in page until you use this demo account:
+
+- Email: `demo@aethera.health`
+- Password: `AetheraDemo2026!`
+
+This is a frontend-only demo gate. The credentials and check are shipped in the browser bundle; do
+not use this mechanism to protect real accounts, personal information, or a production deployment.
+Sign out from the app header to clear the browser session.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

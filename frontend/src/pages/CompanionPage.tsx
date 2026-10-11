@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { api } from '../services/api'
 import type { HealthEventResponse } from '../services/api'
 
@@ -11,7 +12,6 @@ function AetheraIcon() {
     </svg>
   )
 }
-
 function LockIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -22,11 +22,15 @@ function LockIcon() {
 }
 
 export default function CompanionPage() {
-  const [language, setLanguage] = useState<'hi' | 'en'>('hi')
+  const { t, i18n } = useTranslation()
+  const [language, setLanguage] = useState<'hi' | 'en'>(() =>
+    i18n.language.startsWith('hi') ? 'hi' : 'en',
+  )
   const [anomalyMode, setAnomalyMode] = useState<'distress' | 'baseline'>('distress')
   const [secondsRemaining, setSecondsRemaining] = useState(108)
   const [lastEventResult, setLastEventResult] = useState<HealthEventResponse | null>(null)
   const [isSpeaking, setIsSpeaking] = useState(false)
+
 
   // Countdown timer for check-in response
   useEffect(() => {
@@ -132,8 +136,8 @@ export default function CompanionPage() {
   return (
     <main className="companion-page">
       <div className="companion-intro">
-        <span className="eyebrow">PERSONAL COMPANION</span>
-        <h1>Health support, designed for the person carrying it.</h1>
+        <span className="eyebrow">{t('companion.eyebrow')}</span>
+        <h1>{t('companion.headline')}</h1>
         <p>
           A preview of Kamla’s phone experience: Hindi-first family guidance, simple check-ins, personal risk
           indicators, and offline privacy safeguards.
@@ -142,7 +146,7 @@ export default function CompanionPage() {
         {/* Anomaly simulation toggle */}
         <div style={{ marginTop: '20px', padding: '16px', background: '#FFFFFF', border: '1px solid #DADCE0', borderRadius: '8px' }}>
           <strong style={{ display: 'block', fontSize: '14px', marginBottom: '8px', color: '#202124' }}>
-            On-Device Wearable Anomaly Simulator:
+            {t('companion.simulator.title')}
           </strong>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button

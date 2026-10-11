@@ -1,5 +1,7 @@
 
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 function AetheraMark() {
   return (
@@ -41,10 +43,11 @@ function LockIcon() {
 }
 
 export function Header() {
+  const { t } = useTranslation()
   return (
     <header className="site-header">
       <nav className="nav container" aria-label="Main navigation">
-        <NavLink className="brand" to="/" aria-label="Aethera home">
+        <NavLink className="brand" to="/" aria-label={t('nav.home')}>
           <span className="brand-icon">
             <AetheraMark />
           </span>
@@ -52,15 +55,16 @@ export function Header() {
         </NavLink>
 
         <div className="nav-links">
-          <NavLink to="/dashboard">Forecast</NavLink>
-          <NavLink to="/companion">Companion</NavLink>
-          <NavLink to="/caregiver">Care circle</NavLink>
+          <NavLink to="/dashboard">{t('nav.forecast')}</NavLink>
+          <NavLink to="/companion">{t('nav.companion')}</NavLink>
+          <NavLink to="/caregiver">{t('nav.careCircle')}</NavLink>
           <NavLink
             to="/dashboard"
             className="button button-primary nav-cta"
           >
-            Open dashboard
+            {t('nav.openDashboard')}
           </NavLink>
+          <LanguageSwitcher />
         </div>
       </nav>
     </header>
@@ -68,69 +72,67 @@ export function Header() {
 }
 
 function ForecastPreview() {
+  const { t } = useTranslation()
   return (
     <article className="preview-card">
       <div className="preview-heading">
-        <strong>Tomorrow, 6:00 AM</strong>
-        <span className="sample-badge">Sample data</span>
+        <strong>{t('forecastPreview.tomorrow')}</strong>
+        <span className="sample-badge">{t('forecastPreview.sampleData')}</span>
       </div>
 
       <div className="metric-grid">
         <div className="metric-tile">
-          <span className="muted">Inversion</span>
-          <strong className="status-danger">Strong</strong>
+          <span className="muted">{t('forecastPreview.inversion')}</span>
+          <strong className="status-danger">{t('forecastPreview.strong')}</strong>
         </div>
         <div className="metric-tile">
-          <span className="muted">Smoke reaches NCR in</span>
-          <strong>about 14 h</strong>
+          <span className="muted">{t('forecastPreview.smokeReaches')}</span>
+          <strong>{t('forecastPreview.about14h')}</strong>
         </div>
       </div>
 
       <div className="message-card">
-        <span className="muted">Message to Kamla</span>
+        <span className="muted">{t('forecastPreview.messageTo')}</span>
         <p className="message-hindi" lang="hi">
-          माँ, आज सुबह बाहर टहलने न जाएँ। हवा बहुत खराब है। घर के अंदर हल्का टहल लें।
+          {t('forecastPreview.messageHindi')}
         </p>
         <p className="message-translation">
-          Today, skip the walk outside. The air is very bad. A light walk
-          indoors is better.
+          {t('forecastPreview.messageTranslation')}
         </p>
       </div>
 
       <div className="privacy-note">
         <LockIcon />
-        <span>Her health readings stay on her phone.</span>
+        <span>{t('forecastPreview.privacyNote')}</span>
       </div>
     </article>
   )
 }
 
 function Hero() {
+  const { t } = useTranslation()
   return (
     <section className="hero container" id="home">
       <div className="hero-copy">
-        <span className="eyebrow">DELHI NCR · AIR AND HEALTH</span>
+        <span className="eyebrow">{t('hero.eyebrow')}</span>
 
-        <h1>See the bad air coming. Look after the people breathing it.</h1>
+        <h1>{t('hero.headline')}</h1>
 
         <p className="hero-description">
-          Aethera forecasts Delhi NCR air quality for the next 72 hours, with
-          weather and smoke affecting each other. Then it watches over the
-          people most at risk, on their own phone, and tells their family when
-          it matters.
+          {t('hero.description')}
         </p>
 
         <div className="hero-actions">
           <NavLink className="button button-primary" to="/dashboard">
-            Open the dashboard
+            {t('hero.openDashboard')}
           </NavLink>
           <NavLink className="button button-secondary" to="/companion">
-            See the phone app
+            {t('hero.seePhoneApp')}
           </NavLink>
         </div>
 
         <p className="disclaimer">
-          Support tool, not a medical device. In an emergency call 112.
+          {t('hero.disclaimer')}
         </p>
       </div>
 
@@ -142,6 +144,7 @@ function Hero() {
 }
 
 function FeedbackDiagram() {
+  const { t } = useTranslation()
   return (
     <div
       className="feedback-diagram"
@@ -149,29 +152,29 @@ function FeedbackDiagram() {
       aria-label="Weather and smoke influence each other in the 72-hour forecast"
     >
       <div className="diagram-box">
-        <strong>Weather</strong>
-        <span>Temperature</span>
-        <span>Wind</span>
-        <span>Boundary layer height</span>
+        <strong>{t('diagram.weather')}</strong>
+        <span>{t('diagram.temperature')}</span>
+        <span>{t('diagram.wind')}</span>
+        <span>{t('diagram.boundaryLayer')}</span>
       </div>
 
       <div className="diagram-arrows" aria-hidden="true">
-        <span>traps →</span>
-        <span>← alters</span>
+        <span>{t('diagram.traps')}</span>
+        <span>{t('diagram.alters')}</span>
       </div>
 
       <div className="diagram-box">
-        <strong>Smoke</strong>
-        <span>PM2.5 and PM10</span>
-        <span>Ozone</span>
-        <span>NOx</span>
+        <strong>{t('diagram.smoke')}</strong>
+        <span>{t('diagram.pm25')}</span>
+        <span>{t('diagram.ozone')}</span>
+        <span>{t('diagram.nox')}</span>
       </div>
 
       <div className="diagram-caption">
-        <span>Each hour, for 72 hours</span>
+        <span>{t('diagram.eachHour')}</span>
         <div className="diagram-result">
-          <strong>AQI forecast for Delhi NCR</strong>
-          <span>With inversion strength and plume arrival time</span>
+          <strong>{t('diagram.aqiForecast')}</strong>
+          <span>{t('diagram.withInversion')}</span>
         </div>
       </div>
     </div>
@@ -179,24 +182,17 @@ function FeedbackDiagram() {
 }
 
 function ForecastSection() {
+  const { t } = useTranslation()
   return (
     <section className="feature-section section-muted" id="forecast">
       <div className="container feature-grid">
         <div className="feature-copy">
-          <span className="eyebrow">THE FORECAST</span>
-          <h2>Weather and smoke change each other. The forecast should too.</h2>
-          <p>
-            When smoke from stubble burning gets trapped near the ground by an
-            inversion, it blocks sunlight, cools the surface and slows the wind,
-            which traps more smoke. Aethera steps weather and pollution forward
-            together, hour by hour, for 72 hours.
-          </p>
-          <p>
-            The dashboard shows inversion strength, the path of each fire plume
-            and when it arrives, with the source and age of every number.
-          </p>
+          <span className="eyebrow">{t('forecastSection.eyebrow')}</span>
+          <h2>{t('forecastSection.headline')}</h2>
+          <p>{t('forecastSection.para1')}</p>
+          <p>{t('forecastSection.para2')}</p>
           <NavLink className="text-link" to="/dashboard">
-            Explore the forecast <span aria-hidden="true">→</span>
+            {t('forecastSection.exploreLink')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
 
@@ -209,31 +205,32 @@ function ForecastSection() {
 }
 
 function RiskPreview() {
+  const { t } = useTranslation()
   const risks = [
-    { label: 'Heat', score: 24, level: 'Low', color: 'green' },
-    { label: 'Breathing', score: 78, level: 'High', color: 'red' },
-    { label: 'Heart', score: 46, level: 'Medium', color: 'amber' },
+    { labelKey: 'riskPreview.heat', score: 24, levelKey: 'riskPreview.low', color: 'green' },
+    { labelKey: 'riskPreview.breathing', score: 78, levelKey: 'riskPreview.high', color: 'red' },
+    { labelKey: 'riskPreview.heart', score: 46, levelKey: 'riskPreview.medium', color: 'amber' },
   ]
 
   return (
     <article className="risk-card">
       <div className="preview-heading">
-        <strong>Today's risk</strong>
-        <span className="sample-badge">Sample data</span>
+        <strong>{t('riskPreview.todayRisk')}</strong>
+        <span className="sample-badge">{t('riskPreview.sampleData')}</span>
       </div>
 
       {risks.map((risk) => (
-        <div className="risk-item" key={risk.label}>
+        <div className="risk-item" key={risk.labelKey}>
           <div className="risk-label">
-            <span>{risk.label}</span>
+            <span>{t(risk.labelKey)}</span>
             <span>
-              {risk.score} · {risk.level}
+              {risk.score} · {t(risk.levelKey)}
             </span>
           </div>
           <div
             className="risk-track"
             role="progressbar"
-            aria-label={`${risk.label} risk`}
+            aria-label={`${t(risk.labelKey)} risk`}
             aria-valuenow={risk.score}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -248,13 +245,14 @@ function RiskPreview() {
 
       <div className="privacy-note privacy-note-bordered">
         <LockIcon />
-        <span>Calculated on this phone. Works with no network.</span>
+        <span>{t('riskPreview.privacyNote')}</span>
       </div>
     </article>
   )
 }
 
 function CompanionSection() {
+  const { t } = useTranslation()
   return (
     <section className="feature-section" id="companion">
       <div className="container feature-grid companion-grid">
@@ -263,21 +261,12 @@ function CompanionSection() {
         </div>
 
         <div className="feature-copy">
-          <span className="eyebrow">THE COMPANION</span>
-          <h2>Health checks that never leave the phone.</h2>
-          <p>
-            Heart rate, blood oxygen, temperature, activity, sleep and falls
-            are read and understood on the device. It learns what is normal for
-            one person and flags heat stress, dehydration, fatigue and
-            breathing trouble.
-          </p>
-          <p>
-            Only a coarse risk level and area can leave the phone, and only
-            when the user turns sharing on. Alerts are in Hindi or English and
-            can be read aloud.
-          </p>
+          <span className="eyebrow">{t('companionSection.eyebrow')}</span>
+          <h2>{t('companionSection.headline')}</h2>
+          <p>{t('companionSection.para1')}</p>
+          <p>{t('companionSection.para2')}</p>
           <NavLink className="text-link" to="/companion">
-            Explore the companion <span aria-hidden="true">→</span>
+            {t('companionSection.exploreLink')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
       </div>
@@ -285,52 +274,49 @@ function CompanionSection() {
   )
 }
 
-const careSteps = [
-  {
-    title: 'Nudge Kamla',
-    description: 'Stay in, wear a mask, drink water.',
-  },
-  {
-    title: 'Ask “Are you ok?”',
-    description: 'Waits for her reply.',
-  },
-  {
-    title: 'Message her son',
-    description: 'Risk level only, in plain words.',
-  },
-  {
-    title: 'SOS to emergency contact',
-    description:
-      'After a 30 second cancel countdown. Location only if she allowed it.',
-    danger: true,
-  },
-]
-
 function CareSection() {
+  const { t } = useTranslation()
+
+  const careSteps = [
+    {
+      titleKey: 'careSection.steps.nudgeKamla.title',
+      descriptionKey: 'careSection.steps.nudgeKamla.description',
+      danger: false,
+    },
+    {
+      titleKey: 'careSection.steps.askOk.title',
+      descriptionKey: 'careSection.steps.askOk.description',
+      danger: false,
+    },
+    {
+      titleKey: 'careSection.steps.messageSon.title',
+      descriptionKey: 'careSection.steps.messageSon.description',
+      danger: false,
+    },
+    {
+      titleKey: 'careSection.steps.sos.title',
+      descriptionKey: 'careSection.steps.sos.description',
+      danger: true,
+    },
+  ]
+
   return (
     <section className="feature-section section-muted" id="care">
       <div className="container feature-grid">
         <div className="feature-copy">
-          <span className="eyebrow">THE CARE CIRCLE</span>
-          <h2>One calm message to family, not thirty alerts.</h2>
-          <p>
-            Agents decide what to do from the forecast, her readings and
-            whether she replies. They start with her, then her son, then an
-            emergency contact. She can cancel before an SOS goes out.
-          </p>
-          <p>
-            Every decision is logged, so anyone can open “Why did I get this
-            alert?” and see the steps.
-          </p>
+          <span className="eyebrow">{t('careSection.eyebrow')}</span>
+          <h2>{t('careSection.headline')}</h2>
+          <p>{t('careSection.para1')}</p>
+          <p>{t('careSection.para2')}</p>
           <NavLink className="text-link" to="/caregiver">
-            Explore the care circle <span aria-hidden="true">→</span>
+            {t('careSection.exploreLink')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
 
         <div className="feature-visual">
           <article className="care-card">
             {careSteps.map((step, index) => (
-              <div className="care-step" key={step.title}>
+              <div className="care-step" key={step.titleKey}>
                 <div className="care-step-marker">
                   <span
                     className={
@@ -344,8 +330,8 @@ function CareSection() {
                   )}
                 </div>
                 <div className="care-step-content">
-                  <strong>{step.title}</strong>
-                  <p>{step.description}</p>
+                  <strong>{t(step.titleKey)}</strong>
+                  <p>{t(step.descriptionKey)}</p>
                 </div>
               </div>
             ))}
@@ -357,17 +343,15 @@ function CareSection() {
 }
 
 export function Footer() {
+  const { t } = useTranslation()
   return (
     <footer className="site-footer container">
       <div>
-        <strong>Aethera · Team Prometheus</strong>
-        <p>
-          Built for Environmental Hacks, Air track. Powered by AWS architecture.
-        </p>
+        <strong>{t('footer.brand')}</strong>
+        <p>{t('footer.built')}</p>
       </div>
       <p className="footer-disclaimer">
-        Support tool, not a medical device. Values on these screens are sample
-        data for the design preview.
+        {t('footer.disclaimer')}
       </p>
     </footer>
   )
