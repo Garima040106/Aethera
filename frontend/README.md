@@ -12,6 +12,22 @@ This is a frontend-only demo gate. The credentials and check are shipped in the 
 not use this mechanism to protect real accounts, personal information, or a production deployment.
 Sign out from the app header to clear the browser session.
 
+## Amazon Location routes
+
+The protected **Clean Routes** page uses Amazon Location Routes v2. It reads the API key from
+`AMAZON_LOCATION` in `frontend/.env.local` and uses `us-east-1` unless `VITE_AWS_REGION` overrides
+it. Restart Vite after changing either value. The Routes v2 API-key flow does not require a Route
+Calculator name. The key is sent to Amazon Location from the browser, so restrict it in AWS to the
+Routes capability and the deployed site's allowed referrers. Treat it as a browser-visible API key,
+not as a server-side secret.
+
+Route-level air quality scoring is optional and is not provided by this repository's API today.
+To enable green-corridor classification, configure `VITE_ROUTE_AQI_SCORE_URL` to a trusted backend
+that accepts `POST { "geometry": { "type": "LineString", "coordinates": [[longitude, latitude], ...] } }`
+and returns `{ "average_aqi": number, "is_green_corridor": boolean, "source": string, "observed_at": string }`.
+The UI only shows a green-corridor badge when that backend returns the explicit classification and
+score; otherwise it shows Amazon's route time and distance without implying cleaner air.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

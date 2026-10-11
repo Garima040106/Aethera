@@ -22,7 +22,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-[calc(100vh-72px)] bg-[#f7f9f7] lg:grid-cols-2">
+    <main className="grid min-h-[calc(100vh-72px)] bg-[#f7f9f7] pt-4 lg:grid-cols-2">
       <section className="flex items-center justify-center px-6 py-14 sm:px-10 lg:px-16">
         <div className="w-full max-w-md">
           <Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-[#647168] no-underline hover:text-[#174d35]">
@@ -32,7 +32,7 @@ export default function LoginPage() {
             <AetheraLogo size={30} />
           </div>
           <p className="text-xs font-semibold tracking-[.16em] text-[#246b49]">YOUR AIR, IN CONTEXT</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-.045em] text-[#17231c] sm:text-4xl">Welcome to Aethera</h1>
+          <h1 className="font-display mt-3 text-4xl font-semibold tracking-[-.035em] text-[#17231c] sm:text-5xl">Welcome to Aethera</h1>
           <p className="mt-3 text-sm leading-6 text-[#647168]">Sign in with the demo account to explore your local air forecast and environmental dashboard.</p>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>

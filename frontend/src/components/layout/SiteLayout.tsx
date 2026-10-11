@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   AetheraLogo,
@@ -16,11 +16,11 @@ import {
 } from '../Icons'
 import LanguageSwitcher from '../LanguageSwitcher'
 import { getDemoUser, signOutDemo } from '../../services/demoAuth'
+import CursorEffect from '../CursorEffect'
 
 export default function SiteLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [insightsOpen, setInsightsOpen] = useState(true)
-  const location = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const user = getDemoUser()
@@ -32,8 +32,10 @@ export default function SiteLayout() {
 
   return (
     <div className="app-shell">
+      <CursorEffect />
       {/* Top navigation: full width, 64 px high */}
       <header className="site-header">
+        <div className="app-floating-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
             type="button"
@@ -91,6 +93,7 @@ export default function SiteLayout() {
           <span className="hidden text-xs font-medium text-[#647168] sm:inline">{user?.name}</span>
           <button type="button" className="btn btn-secondary" onClick={handleSignOut}>Sign out</button>
         </div>
+        </div>
       </header>
 
       {/* Left sidebar: 232 px wide below the header */}
@@ -98,18 +101,17 @@ export default function SiteLayout() {
         <div className="nav-section">
           <span className="nav-section-label">Navigation</span>
           <NavLink
-            to="/"
-            end
+            to="/dashboard"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setSidebarOpen(false)}
           >
             <CompassIcon size={18} />
-            <span>Explore Map</span>
+            <span>Air dashboard</span>
           </NavLink>
 
           <NavLink
-            to="/?mode=routes"
-            className={() => `nav-item ${location.search.includes('routes') ? 'active' : ''}`}
+            to="/routes"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             onClick={() => setSidebarOpen(false)}
           >
             <RouteIcon size={18} />
