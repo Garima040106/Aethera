@@ -1,5 +1,8 @@
-
 import { NavLink } from 'react-router-dom'
+import {
+  useLanguage,
+  languageOptions,
+} from './i18n/LanguageContext'
 
 function AetheraMark() {
   return (
@@ -41,6 +44,8 @@ function LockIcon() {
 }
 
 export function Header() {
+  const { language, setLanguage, t } = useLanguage()
+
   return (
     <header className="site-header">
       <nav className="nav container" aria-label="Main navigation">
@@ -52,14 +57,31 @@ export function Header() {
         </NavLink>
 
         <div className="nav-links">
-          <NavLink to="/dashboard">Forecast</NavLink>
-          <NavLink to="/companion">Companion</NavLink>
-          <NavLink to="/caregiver">Care circle</NavLink>
+          <label className="language-picker">
+            <span className="sr-only">{t('language.label')}</span>
+            <select
+              aria-label={t('language.label')}
+              value={language}
+              onChange={(event) =>
+                setLanguage(event.target.value as 'en' | 'hi' | 'pa')
+              }
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <NavLink to="/dashboard">{t('app.forecast')}</NavLink>
+          <NavLink to="/companion">{t('app.companion')}</NavLink>
+          <NavLink to="/caregiver">{t('app.careCircle')}</NavLink>
           <NavLink
             to="/dashboard"
             className="button button-primary nav-cta"
           >
-            Open dashboard
+            {t('app.openDashboard')}
           </NavLink>
         </div>
       </nav>
@@ -68,17 +90,19 @@ export function Header() {
 }
 
 function ForecastPreview() {
+  const { t } = useLanguage()
+
   return (
     <article className="preview-card">
       <div className="preview-heading">
         <strong>Tomorrow, 6:00 AM</strong>
-        <span className="sample-badge">Sample data</span>
+        <span className="sample-badge">{t('forecast.sampleData')}</span>
       </div>
 
       <div className="metric-grid">
         <div className="metric-tile">
-          <span className="muted">Inversion</span>
-          <strong className="status-danger">Strong</strong>
+          <span className="muted">{t('forecast.inversion')}</span>
+          <strong className="status-danger">{t('forecast.strong')}</strong>
         </div>
         <div className="metric-tile">
           <span className="muted">Smoke reaches NCR in</span>
@@ -89,7 +113,8 @@ function ForecastPreview() {
       <div className="message-card">
         <span className="muted">Message to Kamla</span>
         <p className="message-hindi" lang="hi">
-          माँ, आज सुबह बाहर टहलने न जाएँ। हवा बहुत खराब है। घर के अंदर हल्का टहल लें।
+          माँ, आज सुबह बाहर टहलने न जाएँ। हवा बहुत खराब है। घर के अंदर हल्का
+          टहल लें।
         </p>
         <p className="message-translation">
           Today, skip the walk outside. The air is very bad. A light walk
@@ -99,39 +124,32 @@ function ForecastPreview() {
 
       <div className="privacy-note">
         <LockIcon />
-        <span>Her health readings stay on her phone.</span>
+        <span>{t('privacy.local')}</span>
       </div>
     </article>
   )
 }
 
 function Hero() {
+  const { t } = useLanguage()
+
   return (
     <section className="hero container" id="home">
       <div className="hero-copy">
-        <span className="eyebrow">DELHI NCR · AIR AND HEALTH</span>
-
-        <h1>See the bad air coming. Look after the people breathing it.</h1>
-
-        <p className="hero-description">
-          Aethera forecasts Delhi NCR air quality for the next 72 hours, with
-          weather and smoke affecting each other. Then it watches over the
-          people most at risk, on their own phone, and tells their family when
-          it matters.
-        </p>
+        <span className="eyebrow">{t('home.eyebrow')}</span>
+        <h1>{t('home.title')}</h1>
+        <p className="hero-description">{t('home.description')}</p>
 
         <div className="hero-actions">
           <NavLink className="button button-primary" to="/dashboard">
-            Open the dashboard
+            {t('home.openDashboard')}
           </NavLink>
           <NavLink className="button button-secondary" to="/companion">
-            See the phone app
+            {t('home.seePhoneApp')}
           </NavLink>
         </div>
 
-        <p className="disclaimer">
-          Support tool, not a medical device. In an emergency call 112.
-        </p>
+        <p className="disclaimer">{t('home.disclaimer')}</p>
       </div>
 
       <div className="hero-visual">
@@ -154,19 +172,16 @@ function FeedbackDiagram() {
         <span>Wind</span>
         <span>Boundary layer height</span>
       </div>
-
       <div className="diagram-arrows" aria-hidden="true">
         <span>traps →</span>
         <span>← alters</span>
       </div>
-
       <div className="diagram-box">
         <strong>Smoke</strong>
         <span>PM2.5 and PM10</span>
         <span>Ozone</span>
         <span>NOx</span>
       </div>
-
       <div className="diagram-caption">
         <span>Each hour, for 72 hours</span>
         <div className="diagram-result">
@@ -179,12 +194,16 @@ function FeedbackDiagram() {
 }
 
 function ForecastSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="feature-section section-muted" id="forecast">
       <div className="container feature-grid">
         <div className="feature-copy">
-          <span className="eyebrow">THE FORECAST</span>
-          <h2>Weather and smoke change each other. The forecast should too.</h2>
+          <span className="eyebrow">{t('forecast.title')}</span>
+          <h2>
+            Weather and smoke change each other. The forecast should too.
+          </h2>
           <p>
             When smoke from stubble burning gets trapped near the ground by an
             inversion, it blocks sunlight, cools the surface and slows the wind,
@@ -196,10 +215,9 @@ function ForecastSection() {
             and when it arrives, with the source and age of every number.
           </p>
           <NavLink className="text-link" to="/dashboard">
-            Explore the forecast <span aria-hidden="true">→</span>
+            {t('forecast.explore')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
-
         <div className="feature-visual">
           <FeedbackDiagram />
         </div>
@@ -209,6 +227,7 @@ function ForecastSection() {
 }
 
 function RiskPreview() {
+  const { t } = useLanguage()
   const risks = [
     { label: 'Heat', score: 24, level: 'Low', color: 'green' },
     { label: 'Breathing', score: 78, level: 'High', color: 'red' },
@@ -219,7 +238,7 @@ function RiskPreview() {
     <article className="risk-card">
       <div className="preview-heading">
         <strong>Today's risk</strong>
-        <span className="sample-badge">Sample data</span>
+        <span className="sample-badge">{t('forecast.sampleData')}</span>
       </div>
 
       {risks.map((risk) => (
@@ -248,23 +267,24 @@ function RiskPreview() {
 
       <div className="privacy-note privacy-note-bordered">
         <LockIcon />
-        <span>Calculated on this phone. Works with no network.</span>
+        <span>{t('privacy.offline')}</span>
       </div>
     </article>
   )
 }
 
 function CompanionSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="feature-section" id="companion">
       <div className="container feature-grid companion-grid">
         <div className="feature-visual">
           <RiskPreview />
         </div>
-
         <div className="feature-copy">
-          <span className="eyebrow">THE COMPANION</span>
-          <h2>Health checks that never leave the phone.</h2>
+          <span className="eyebrow">{t('companion.title')}</span>
+          <h2>{t('companion.healthChecks')}</h2>
           <p>
             Heart rate, blood oxygen, temperature, activity, sleep and falls
             are read and understood on the device. It learns what is normal for
@@ -277,7 +297,7 @@ function CompanionSection() {
             can be read aloud.
           </p>
           <NavLink className="text-link" to="/companion">
-            Explore the companion <span aria-hidden="true">→</span>
+            {t('companion.explore')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
       </div>
@@ -307,11 +327,13 @@ const careSteps = [
 ]
 
 function CareSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="feature-section section-muted" id="care">
       <div className="container feature-grid">
         <div className="feature-copy">
-          <span className="eyebrow">THE CARE CIRCLE</span>
+          <span className="eyebrow">{t('care.title')}</span>
           <h2>One calm message to family, not thirty alerts.</h2>
           <p>
             Agents decide what to do from the forecast, her readings and
@@ -323,7 +345,7 @@ function CareSection() {
             alert?” and see the steps.
           </p>
           <NavLink className="text-link" to="/caregiver">
-            Explore the care circle <span aria-hidden="true">→</span>
+            {t('care.explore')} <span aria-hidden="true">→</span>
           </NavLink>
         </div>
 

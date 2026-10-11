@@ -1,0 +1,45 @@
+
+{
+  "app": {
+    "name": "Aethera",
+    "forecast": "Forecast",
+    "companion": "Companion",
+    "careCircle": "Care circle",
+    "openDashboard": "Open dashboard"
+  },
+  "home": {
+    "eyebrow": "DELHI NCR · AIR AND HEALTH",
+    "title": "See the bad air coming. Look after the people breathing it.",
+    "description": "Aethera forecasts Delhi NCR air quality for the next 72 hours, with weather and smoke affecting each other. Then it watches over the people most at risk, on their own phone, and tells their family when it matters.",
+    "openDashboard": "Open the dashboard",
+    "seePhoneApp": "See the phone app",
+    "disclaimer": "Support tool, not a medical device. In an emergency call 112."
+  },
+  "forecast": {
+    "title": "The forecast",
+    "inversion": "Inversion",
+    "strong": "Strong",
+    "sampleData": "Sample data",
+    "explore": "Explore the forecast"
+  },
+  "companion": {
+    "title": "The companion",
+    "healthChecks": "Health checks that never leave the phone.",
+    "explore": "Explore the companion"
+  },
+  "care": {
+    "title": "The care circle",
+    "explore": "Explore the care circle"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "local": "Her health readings stay on her phone.",
+    "offline": "Calculated on this phone. Works with no network."
+  },
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "hindi": "हिन्दी",
+    "punjabi": "ਪੰਜਾਬੀ"
+  }
+}
