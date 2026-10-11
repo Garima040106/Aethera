@@ -8,7 +8,7 @@ export class EnvironmentalService {
 
   async forecast(area = 'noida', hours = 72): Promise<ForecastResponse> {
     const location = areaFor(area)
-    const latestPm25 = await this.openAq.getLatestPm25()
+    const latestPm25 = await this.openAq.getLatestPm25(location)
     const points = runForecast(area, hours, true, latestPm25?.value)
     const peak = points.reduce((max, point) => point.aqi_coupled > max.aqi_coupled ? point : max, points[0]!)
     return {

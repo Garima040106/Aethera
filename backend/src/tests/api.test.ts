@@ -39,7 +39,7 @@ describe('Express API compatibility', () => {
       aqi_uncoupled: expect.any(Number),
       ventilation_coefficient_m2s: expect.any(Number),
     })
-    expect(forecast.body.source_provenance.model).toContain('demonstration')
+    expect(forecast.body.source_provenance.model).toContain('72-hour coupled environmental surrogate')
 
     const inversion = await request(app).get('/api/inversion?area=noida').expect(200)
     expect(['Weak', 'Moderate', 'Strong']).toContain(inversion.body.inversion_status_now)

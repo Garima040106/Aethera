@@ -37,7 +37,6 @@ export const env = {
   decisionsTable: requiredWhenEnabled(process.env.DYNAMODB_DECISIONS_TABLE, 'DYNAMODB_DECISIONS_TABLE', enableDynamoDB),
   bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-3-5-sonnet-20241022-v2:0',
   openAqApiKey: process.env.OPENAQ_API_KEY?.trim() || undefined,
-  openAqLocationId: process.env.OPENAQ_LOCATION_ID?.trim() || '8118',
   appName: 'Saans Saathi API',
   appVersion: '1.0.0',
 } as const
