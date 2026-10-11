@@ -1,4 +1,4 @@
-"""Care Circle Agent: Formulates calm caregiver notifications."""
+"""Care Circle Agent: Formulates calm Advanced User notifications."""
 
 from typing import Dict, Any
 from app.core.bedrock import bedrock_provider

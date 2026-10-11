@@ -1,22 +1,35 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AetheraLogo, ArrowRightIcon, LockIcon } from '../components/Icons'
+import { AetheraLogo, ArrowRightIcon, HeartPulseIcon, LockIcon } from '../components/Icons'
 import CursorEffect from '../components/CursorEffect'
-import { DEMO_CREDENTIALS, signInDemo } from '../services/demoAuth'
+import { DEMO_ACCOUNTS, signInDemo, type DemoRole } from '../services/demoAuth'
 
-export default function LoginPage() {
-  const [email, setEmail] = useState<string>(DEMO_CREDENTIALS.email)
-  const [password, setPassword] = useState<string>(DEMO_CREDENTIALS.password)
+export default function LoginPage({ role }: { role: DemoRole }) {
+  const account = DEMO_ACCOUNTS[role]
+  const isCaregiver = role === 'caregiver'
+  const [email, setEmail] = useState<string>(account.email)
+  const [password, setPassword] = useState<string>(account.password)
   const [error, setError] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
-  const destination = (location.state as { from?: string } | null)?.from ?? '/dashboard'
+  const requestedDestination = (location.state as { from?: string } | null)?.from
+  const allowedDestinations = isCaregiver
+    ? ['/caregiver-dashboard']
+    : ['/dashboard', '/companion', '/routes']
+  const destination = requestedDestination && allowedDestinations.includes(requestedDestination)
+    ? requestedDestination
+    : isCaregiver ? '/caregiver-dashboard' : '/dashboard'
+
+  function enterDemo() {
+    signInDemo(account.email, account.password, role)
+    navigate(destination, { replace: true })
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    if (!signInDemo(email, password)) {
-      setError('Those demo credentials did not match. Use the account shown below.')
+    if (!signInDemo(email, password, role)) {
+      setError('Those details do not match this demo account. You can use quick sign-in above.')
       return
     }
     navigate(destination, { replace: true })
@@ -25,65 +38,101 @@ export default function LoginPage() {
   return (
     <>
       <CursorEffect />
-      <main className="login-page grid min-h-screen bg-[#fffef3] lg:grid-cols-2">
-      <section className="flex items-center justify-center px-6 py-14 sm:px-10 lg:px-16">
-        <div className="w-full max-w-md">
-          <Link to="/" className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-[#647168] no-underline hover:text-[#174d35]">
-            <span aria-hidden="true">←</span> Back to Aethera
-          </Link>
-          <div className="mb-7 grid h-12 w-12 place-items-center rounded-2xl bg-[#e8f4ec]">
-            <AetheraLogo size={30} />
-          </div>
-          <p className="text-xs font-semibold tracking-[.16em] text-[#246b49]">YOUR AIR, IN CONTEXT</p>
-          <h1 className="font-display mt-3 text-4xl font-semibold tracking-[-.035em] text-[#17231c] sm:text-5xl">Welcome to Aethera</h1>
-          <p className="mt-3 text-sm leading-6 text-[#647168]">Sign in with the demo account to explore your local air forecast and environmental dashboard.</p>
+      <main className={`elder-login min-h-screen ${isCaregiver ? 'caregiver-login' : 'elder-login'}`}>
+        <section className="elder-login-main">
+          <div className="elder-login-content">
+            <Link to="/" className="elder-back-link"><span aria-hidden="true">←</span> Back to Aethera</Link>
+            <div className="elder-login-brand">
+              <AetheraLogo size={38} />
+              <span>Aethera</span>
+            </div>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#34483c]">Email address</label>
-              <input id="email" name="email" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className="h-12 w-full rounded-xl border border-[#dce5de] bg-white px-4 text-sm text-[#17231c] outline-none transition focus:border-[#55916c] focus:ring-4 focus:ring-[#174d35]/10" />
-            </div>
-            <div>
-              <label htmlFor="password" className="mb-2 block text-sm font-medium text-[#34483c]">Password</label>
-              <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="h-12 w-full rounded-xl border border-[#dce5de] bg-white px-4 text-sm text-[#17231c] outline-none transition focus:border-[#55916c] focus:ring-4 focus:ring-[#174d35]/10" />
-            </div>
-            {error && <p role="alert" className="rounded-lg border border-[#f2c9c4] bg-[#fff1ef] px-3 py-2 text-sm text-[#a33a2d]">{error}</p>}
-            <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#174d35] text-sm font-semibold text-white shadow-md shadow-[#174d35]/15 transition hover:bg-[#1f6b47]">
-              Sign in to dashboard <ArrowRightIcon size={17} />
+            <p className="elder-eyebrow">{isCaregiver ? 'Advanced support tools' : 'A calmer way to plan your day'}</p>
+            <h1>
+              {isCaregiver ? <>Welcome, Advanced User.<br /><span>We’ll keep it clear.</span></> : <>Welcome.<br /><span>You’re in the right place.</span></>}
+            </h1>
+            <p className="elder-login-intro">
+              {isCaregiver
+                ? 'Sign in to see shared check-ins, the coarse risk status, and clear next steps for your care circle.'
+                : 'Sign in to see the air near you, get simple guidance, and reach your care circle.'}
+            </p>
+
+            <button type="button" onClick={enterDemo} className="elder-login-primary">
+              {isCaregiver ? 'Continue to Advanced User dashboard' : 'Continue to my dashboard'} <ArrowRightIcon size={21} />
             </button>
-          </form>
+            <p className="elder-login-hint">This demo opens directly. No typing is needed.</p>
 
-          <div className="mt-6 rounded-xl border border-[#d7e8dc] bg-[#edf6f0] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#246b49]">Demo account</p>
-            <dl className="mt-3 grid grid-cols-[72px_1fr] gap-x-2 gap-y-2 text-sm">
-              <dt className="text-[#647168]">Email</dt><dd className="font-medium text-[#17231c]">{DEMO_CREDENTIALS.email}</dd>
-              <dt className="text-[#647168]">Password</dt><dd className="font-medium text-[#17231c]">{DEMO_CREDENTIALS.password}</dd>
-            </dl>
+            <details className="elder-manual-login">
+              <summary>Enter demo sign-in details instead</summary>
+              <form className="elder-login-form" onSubmit={handleSubmit}>
+                <label>
+                  <span>Email address</span>
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </label>
+                {error && <p role="alert" className="elder-login-error">{error}</p>}
+                <button type="submit" className="elder-login-secondary">Sign in</button>
+              </form>
+            </details>
+
+            <div className="elder-demo-account">
+              <p className="elder-demo-title">{isCaregiver ? 'Advanced User demo account' : 'Older adult demo account'}</p>
+              <p><span>Email</span><strong>{account.email}</strong></p>
+              <p><span>Password</span><strong>{account.password}</strong></p>
+            </div>
+
+            <p className="elder-login-privacy"><LockIcon size={18} /> This demo stores sign-in on this browser only. It is not production authentication.</p>
+            <p className="elder-role-switch">
+              {isCaregiver ? 'Looking for the older adult view?' : 'Signing in as an Advanced User?'}{' '}
+              <Link to={isCaregiver ? '/elder-login' : '/caregiver-login'}>
+                {isCaregiver ? 'Older adult sign-in' : 'Advanced User sign-in'}
+              </Link>
+            </p>
           </div>
-          <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#78847d]">
-            <LockIcon size={14} className="mt-0.5 shrink-0" />
-            Demo sign-in is stored in this browser only. It is not production authentication and does not protect sensitive data.
-          </p>
-        </div>
-      </section>
+        </section>
 
-      <aside className="relative hidden overflow-hidden bg-[#19191b] px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-32 -top-24 h-[520px] w-[520px] rounded-full border border-white/10" />
-        <div className="absolute -right-16 -top-8 h-[390px] w-[390px] rounded-full border border-white/10" />
-        <div className="absolute -bottom-56 -left-32 h-[560px] w-[560px] rounded-full bg-[#246b49]/70 blur-2xl" />
-        <div className="relative max-w-lg">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85">
-            <span className="h-2 w-2 rounded-full bg-[#9bd2a9]" /> Delhi NCR · Air and health
-          </span>
-          <h2 className="mt-8 text-4xl font-semibold leading-tight tracking-[-.04em]">Better context for the air you breathe.</h2>
-          <p className="mt-5 max-w-md text-base leading-7 text-white/75">
-            Explore neighborhood forecasts, watch conditions change, and find practical guidance for the people who need it.
-          </p>
-        </div>
-        <p className="relative max-w-md text-xs leading-5 text-white/60">
-          Aethera is a support tool, not a medical device. Forecast and sample values are for demonstration.
-        </p>
-      </aside>
+        <aside className="elder-login-aside">
+          <div className="elder-login-orbit elder-login-orbit-one" />
+          <div className="elder-login-orbit elder-login-orbit-two" />
+          <div className="elder-login-aside-content">
+            <span className="elder-login-aside-icon"><HeartPulseIcon size={30} /></span>
+            <p className="elder-eyebrow">{isCaregiver ? 'Care circle' : 'Air, health and people'}</p>
+            <h2>{isCaregiver ? <>Stay close.<br /><em>Know the next step.</em></> : <>Useful information.<br /><em>Without the overwhelm.</em></>}</h2>
+            <ul>
+              {isCaregiver ? (
+                <>
+                  <li>See only information shared with consent</li>
+                  <li>Understand check-in and escalation status</li>
+                  <li>Get calm, actionable context</li>
+                </>
+              ) : (
+                <>
+                  <li>See a simple local air report</li>
+                  <li>Get practical, easy-to-read guidance</li>
+                  <li>Keep personal health readings private</li>
+                </>
+              )}
+            </ul>
+          </div>
+          <p className="elder-login-disclaimer">Aethera is a support tool, not a medical device. In an emergency, call 112.</p>
+        </aside>
       </main>
     </>
   )

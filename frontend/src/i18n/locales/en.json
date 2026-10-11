@@ -147,7 +147,7 @@
     },
     "actionResult": "Action Result",
     "dispatchedToRohan": "Dispatched to Rohan",
-    "privacyNote": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with caregiver Rohan under explicit consent rules.",
+    "privacyNote": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with Advanced User Rohan under explicit consent rules.",
     "worksOffline": "Works offline",
     "today6am": "Today 6:00 AM",
     "live": "Live",
@@ -159,12 +159,12 @@
     "breathingHarder": "Your breathing looks harder than usual.",
     "imOkay": "I am okay",
     "needHelp": "Need help",
-    "disclaimer": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with caregiver Rohan under explicit consent rules."
+    "disclaimer": "Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are shared with Advanced User Rohan under explicit consent rules."
   },
   "caregiver": {
     "eyebrow": "CARE CIRCLE",
     "headline": "Know when someone you love needs you.",
-    "description": "A caregiver view designed to make urgent information clear while respecting the privacy of the person receiving care. One calm notification in plain words, not 30 confusing charts.",
+    "description": "An Advanced User view designed to make urgent information clear while respecting the privacy of the person receiving care. One calm notification in plain words, not 30 confusing charts.",
     "sharing": {
       "riskLevel": "Risk level",
       "riskValue": "Shared (HIGH)",

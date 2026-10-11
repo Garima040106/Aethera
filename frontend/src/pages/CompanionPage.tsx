@@ -211,7 +211,7 @@ export default function CompanionPage() {
 
         <p className="companion-disclaimer">
           Privacy guarantee: Raw heart rate and SpO2 numbers stay on this phone. Only coarse risk bands (e.g. HIGH) are
-          shared with caregiver Rohan under explicit consent rules.
+          shared with Advanced User Rohan under explicit consent rules.
         </p>
       </div>
 

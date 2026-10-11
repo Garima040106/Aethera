@@ -118,7 +118,7 @@ export default function CaregiverPage() {
             }}
           >
             Test the deterministic escalation ladder connecting on-device
-            detection, Bedrock agents, and SNS caregiver dispatch:
+            detection, Bedrock agents, and SNS advanced-user notifications:
           </p>
           <div
             style={{
@@ -288,7 +288,7 @@ export default function CaregiverPage() {
 
       <section
         className="caregiver-phone"
-        aria-label="Caregiver phone preview"
+        aria-label="Advanced User phone preview"
       >
         <header className="caregiver-phone-header">
           <div className="caregiver-brand">

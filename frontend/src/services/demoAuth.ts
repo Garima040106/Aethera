@@ -1,25 +1,38 @@
 const SESSION_KEY = 'aethera_demo_session'
 
-export const DEMO_CREDENTIALS = {
-  email: 'demo@aethera.health',
-  password: 'AetheraDemo2026!',
-  name: 'Aethera Demo',
-} as const
+export type DemoRole = 'elder' | 'caregiver'
+
+export const DEMO_ACCOUNTS: Record<DemoRole, { email: string; password: string; name: string }> = {
+  elder: {
+    email: 'demo@aethera.health',
+    password: 'AetheraDemo2026!',
+    name: 'Kamla Sharma',
+  },
+  caregiver: {
+    email: 'caregiver@aethera.health',
+    password: 'AetheraCare2026!',
+    name: 'Rohan Sharma',
+  },
+}
+
+export const DEMO_CREDENTIALS = DEMO_ACCOUNTS.elder
 
 export interface DemoUser {
   email: string
   name: string
+  role: DemoRole
 }
 
-export function signInDemo(email: string, password: string): DemoUser | null {
+export function signInDemo(email: string, password: string, role: DemoRole): DemoUser | null {
+  const account = DEMO_ACCOUNTS[role]
   if (
-    email.trim().toLowerCase() !== DEMO_CREDENTIALS.email ||
-    password !== DEMO_CREDENTIALS.password
+    email.trim().toLowerCase() !== account.email ||
+    password !== account.password
   ) {
     return null
   }
 
-  const user = { email: DEMO_CREDENTIALS.email, name: DEMO_CREDENTIALS.name }
+  const user: DemoUser = { email: account.email, name: account.name, role }
   localStorage.setItem(SESSION_KEY, JSON.stringify(user))
   return user
 }
@@ -30,15 +43,17 @@ export function getDemoUser(): DemoUser | null {
     if (!session) return null
 
     const user: unknown = JSON.parse(session)
-    if (
-      typeof user === 'object' &&
-      user !== null &&
-      'email' in user &&
-      user.email === DEMO_CREDENTIALS.email &&
-      'name' in user &&
-      user.name === DEMO_CREDENTIALS.name
-    ) {
-      return { email: user.email, name: user.name }
+    if (typeof user !== 'object' || user === null || !('email' in user) || !('name' in user)) {
+      localStorage.removeItem(SESSION_KEY)
+      return null
+    }
+
+    const legacyElderSession = user.email === DEMO_ACCOUNTS.elder.email && user.name === DEMO_ACCOUNTS.elder.name && !('role' in user)
+    const role = legacyElderSession ? 'elder' : 'role' in user ? user.role : null
+    if ((role === 'elder' || role === 'caregiver') && user.email === DEMO_ACCOUNTS[role].email && user.name === DEMO_ACCOUNTS[role].name) {
+      const validUser: DemoUser = { email: user.email, name: user.name, role }
+      if (legacyElderSession) localStorage.setItem(SESSION_KEY, JSON.stringify(validUser))
+      return validUser
     }
   } catch {
     localStorage.removeItem(SESSION_KEY)
