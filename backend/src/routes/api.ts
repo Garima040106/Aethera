@@ -7,7 +7,7 @@ import { DecisionService } from '../services/decision-service.js'
 import { AlertLadder } from '../workflows/alert-ladder.js'
 import { getAgentStatus } from '../agents/agent-status.js'
 import { compareScenarios } from '../services/scenario-service.js'
-import { alertSimulationSchema, areaQuerySchema, environmentalHistoryQuerySchema, forecastQuerySchema, healthEventSchema, locationRouteSchema, placeSearchQuerySchema, routeAqiScoreSchema, scenarioCompareSchema } from '../schemas/api.js'
+import { aqiMapBoundsQuerySchema, alertSimulationSchema, areaQuerySchema, environmentalHistoryQuerySchema, forecastQuerySchema, healthEventSchema, locationRouteSchema, placeSearchQuerySchema, routeAqiScoreSchema, scenarioCompareSchema } from '../schemas/api.js'
 import { asyncHandler, parseRequest } from '../middleware/errors.js'
 import { createRepositories, type RepositorySet } from '../aws/repositories.js'
 import { LocationSearchService } from '../services/location-search-service.js'
@@ -17,6 +17,8 @@ import type { CpcbAqiProvider } from '../services/cpcb-aqi-client.js'
 import { LocationRoutesService } from '../services/location-routes-service.js'
 import type { LocationRoutesProvider } from '../services/location-routes-service.js'
 import { scoreRouteAqi } from '../services/aqi-route-scoring.js'
+import { OpenMeteoAqiClient } from '../services/open-meteo-aqi-client.js'
+import type { ModeledAqiProvider } from '../services/open-meteo-aqi-client.js'
 
 export interface RouteDependencies {
   repositories?: RepositorySet
@@ -24,6 +26,7 @@ export interface RouteDependencies {
   locationSearch?: LocationSearchProvider
   locationRoutes?: LocationRoutesProvider
   cpcbAqi?: CpcbAqiProvider
+  modeledAqi?: ModeledAqiProvider
 }
 
 export function createApiRouter(dependencies: RouteDependencies = {}): Router {
@@ -33,6 +36,7 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
   const locationSearch = dependencies.locationSearch ?? new LocationSearchService()
   const locationRoutes = dependencies.locationRoutes ?? new LocationRoutesService()
   const cpcbAqi = dependencies.cpcbAqi ?? new CpcbAqiClient()
+  const modeledAqi = dependencies.modeledAqi ?? new OpenMeteoAqiClient()
   const riskEngine = new RiskEngine(repositories.alerts)
   const decisions = new DecisionService(repositories.decisions)
   const alertLadder = new AlertLadder(repositories.alerts, decisions)
@@ -67,14 +71,18 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
     })
   }))
 
-  router.get('/api/location/search', asyncHandler(async (req, res) => {
-    const query = parseRequest(() => placeSearchQuerySchema.parse(req.query), 'query')
+  const handlePlaceSearch = asyncHandler(async (req, res) => {
+    const rawQuery = typeof req.query.q === 'string' ? req.query.q : typeof req.query.query === 'string' ? req.query.query : req.query.q
+    const query = parseRequest(() => placeSearchQuerySchema.parse({ q: rawQuery }), 'query')
     if (!locationSearch.configured) {
       res.status(503).json({ detail: 'Amazon Location place search is not configured.' })
       return
     }
     res.json({ results: await locationSearch.search(query.q) })
-  }))
+  })
+
+  router.get('/api/location/search', handlePlaceSearch)
+  router.get('/api/places/search', handlePlaceSearch)
 
   router.post('/api/location/routes', asyncHandler(async (req, res) => {
     const routeRequest = parseRequest(() => locationRouteSchema.parse(req.body), 'body')
@@ -124,6 +132,20 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
     })
   }))
 
+  router.get('/api/aqi/model', asyncHandler(async (req, res) => {
+    const bounds = parseRequest(() => aqiMapBoundsQuerySchema.parse(req.query), 'query')
+    const readings = await modeledAqi.getReadings(bounds)
+    res.json({
+      status: readings.length ? 'available' : 'empty',
+      updated_at: readings.reduce<string | null>((latest, reading) =>
+        latest === null || Date.parse(reading.observed_at) > Date.parse(latest) ? reading.observed_at : latest, null),
+      source: 'Open-Meteo Air Quality API · CAMS model estimate',
+      aqi_system: 'US_AQI',
+      readings,
+      ...(readings.length ? {} : { detail: 'The model returned no AQI estimates for this map view.' }),
+    })
+  }))
+
   router.get('/api/forecast', asyncHandler(async (req, res) => {
     const query = parseRequest(() => forecastQuerySchema.parse(req.query), 'query')
     const forecast = await environmental.forecast(query.area, query.hours)
@@ -148,14 +170,10 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
     }
   })
 
-  router.get('/api/plumes', (req, res, next) => {
-    try {
-      const query = parseRequest(() => areaQuerySchema.parse(req.query), 'query')
-      res.json(environmental.plumes(query.area))
-    } catch (error) {
-      next(error)
-    }
-  })
+  router.get('/api/plumes', asyncHandler(async (req, res) => {
+    const query = parseRequest(() => areaQuerySchema.parse(req.query), 'query')
+    res.json(await environmental.plumes(query.area))
+  }))
 
   router.get('/api/metrics', (_req, res) => res.json(metricsResponse))
 

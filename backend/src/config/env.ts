@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 
-dotenv.config({ path: ['.env.local', '.env'] })
+dotenv.config({ path: ['.env.local', '.env', 'backend/.env.local', 'backend/.env'] })
 
 function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (value === undefined || value.trim() === '') return fallback
@@ -10,21 +10,13 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   throw new Error(`Expected true or false, received invalid boolean configuration: ${value}`)
 }
 
-function requiredWhenEnabled(value: string | undefined, name: string, enabled: boolean): string | undefined {
-  const normalized = value?.trim()
-  if (enabled && !normalized) {
-    throw new Error(`${name} must be set when ENABLE_DYNAMODB=true`)
-  }
-  return normalized || undefined
-}
-
 const enableDynamoDB = parseBoolean(process.env.ENABLE_DYNAMODB, false)
 const port = Number(process.env.PORT ?? '8000')
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   port,
-  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173')
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
@@ -32,13 +24,18 @@ export const env = {
   enableBedrock: parseBoolean(process.env.ENABLE_BEDROCK, false),
   enableOpenAq: parseBoolean(process.env.ENABLE_OPENAQ, Boolean(process.env.OPENAQ_API_KEY?.trim())),
   awsRegion: process.env.AWS_REGION ?? 'us-east-1',
-  dynamoDBTable: requiredWhenEnabled(process.env.DYNAMODB_TABLE, 'DYNAMODB_TABLE', enableDynamoDB),
-  alertsTable: requiredWhenEnabled(process.env.DYNAMODB_ALERTS_TABLE, 'DYNAMODB_ALERTS_TABLE', enableDynamoDB),
-  decisionsTable: requiredWhenEnabled(process.env.DYNAMODB_DECISIONS_TABLE, 'DYNAMODB_DECISIONS_TABLE', enableDynamoDB),
+  awsProfile: process.env.AWS_PROFILE?.trim() || undefined,
+  dynamoDBTable: process.env.DYNAMODB_TABLE?.trim() || 'AtheraEnvironmentalData',
+  alertsTable: process.env.DYNAMODB_ALERTS_TABLE?.trim() || undefined,
+  decisionsTable: process.env.DYNAMODB_DECISIONS_TABLE?.trim() || undefined,
   bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-3-5-sonnet-20241022-v2:0',
   openAqApiKey: process.env.OPENAQ_API_KEY?.trim() || undefined,
   dataGovInApiKey: process.env.CPCB_API_KEY?.trim() || process.env.DATA_GOV_IN_API_KEY?.trim() || undefined,
   cpcbAqiResourceId: process.env.CPCB_AQI_RESOURCE_ID?.trim() || '3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69',
+  nasaFirmsMapKey: process.env.NASA_FIRMS_MAP_KEY?.trim() || undefined,
+  openAiApiKey: process.env.OPENAI_API_KEY?.trim() || undefined,
+  openAiBaseUrl: process.env.OPENAI_BASE_URL?.trim() || 'https://bedrock-mantle.us-east-1.api.aws/v1',
+  openAiProjectId: process.env.OPENAI_PROJECT_ID?.trim() || 'default',
   appName: 'Saans Saathi API',
   appVersion: '1.0.0',
 } as const

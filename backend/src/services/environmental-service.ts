@@ -1,10 +1,14 @@
 import { areaFor, fireHotspots } from '../data/fixtures.js'
 import { runForecast } from '../ml/coupled-surrogate.js'
 import { OpenAqClient } from './openaq-client.js'
+import { FirmsClient } from './firms-client.js'
 import type { ForecastResponse, InversionResponse, MetricsResponse, PlumeResponse } from '../schemas/api.js'
 
 export class EnvironmentalService {
-  constructor(private readonly openAq = new OpenAqClient()) {}
+  constructor(
+    private readonly openAq = new OpenAqClient(),
+    private readonly firms = new FirmsClient(),
+  ) {}
 
   async forecast(area = 'noida', hours = 72): Promise<ForecastResponse> {
     const location = areaFor(area)
@@ -26,7 +30,7 @@ export class EnvironmentalService {
           ? Object.entries(latestPm25.pollutants).map(([name, reading]) => `${name}=${reading.value} ${reading.unit}`).join(', ')
           : 'Unavailable',
         weather: 'Illustrative NOAA GFS / IMD source attribution; no live feed connected',
-        fires: 'NASA FIRMS sample fixture; not a live satellite feed',
+        fires: this.firms.configured ? 'NASA FIRMS live satellite adapter configured' : 'NASA FIRMS sample fixture; not a live satellite feed',
         model: latestPm25
           ? 'Saans Saathi 72-hour coupled environmental surrogate initialized from live OpenAQ PM2.5'
           : 'Saans Saathi 72-hour coupled environmental surrogate (demonstration only)',
@@ -78,7 +82,8 @@ export class EnvironmentalService {
 
   plumes(area = 'noida'): PlumeResponse {
     const target = areaFor(area)
-    const hotspots = fireHotspots.map((point) => ({ ...point }))
+    const firmsData = this.firms.getUpwindHotspots()
+    const hotspots = firmsData.hotspots.length > 0 ? firmsData.hotspots : fireHotspots.map((point) => ({ ...point }))
     const averageLatitude = hotspots.reduce((sum, item) => sum + item.latitude, 0) / hotspots.length
     const averageLongitude = hotspots.reduce((sum, item) => sum + item.longitude, 0) / hotspots.length
     const steps: [number, number, number, number, number][] = [
@@ -91,7 +96,7 @@ export class EnvironmentalService {
     ]
     return {
       area_target: target.name,
-      updated_at: '41 min ago (Sample fixture timestamp)',
+      updated_at: firmsData.isFixture ? '41 min ago (Sample fixture timestamp)' : new Date().toISOString(),
       estimated_arrival_hours: 14,
       wind_direction_cardinal: 'North-West (315° NW prevailing winter corridor)',
       fire_count_upwind: hotspots.length,
@@ -104,7 +109,7 @@ export class EnvironmentalService {
         concentration_factor,
       })),
       trapping_factor: 'Illustrative near-ground trapping proxy; not a measured live condition',
-      data_source: 'Illustrative NASA FIRMS (VIIRS/MODIS) sample fixture + GFS attribution; no live source connected',
+      data_source: firmsData.dataSource,
     }
   }
 }

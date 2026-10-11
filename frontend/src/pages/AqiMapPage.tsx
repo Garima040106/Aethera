@@ -4,7 +4,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { api } from '../services/api'
-import type { AqiStation, AqiStationsResponse, PlaceSearchResult } from '../services/api'
+import type { AqiMapBounds, AqiStation, AqiStationsResponse, ModeledAqiReading, ModeledAqiResponse, PlaceSearchResult } from '../services/api'
 
 setWorkerUrl(mapLibreWorkerUrl)
 
@@ -84,6 +84,32 @@ function createStationFeatures(stations: AqiStation[]): FeatureCollection<Point,
   }
 }
 
+function usAqiColor(aqi: number): string {
+  if (aqi <= 50) return '#23864b'
+  if (aqi <= 100) return '#dfaa23'
+  if (aqi <= 150) return '#e87932'
+  if (aqi <= 200) return '#c9473d'
+  if (aqi <= 300) return '#8c4da8'
+  return '#7d3042'
+}
+
+function createModeledFeatures(readings: ModeledAqiReading[]): FeatureCollection<Point, { id: string; aqi: number; color: string }> {
+  return {
+    type: 'FeatureCollection',
+    features: readings.map((reading) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [reading.longitude, reading.latitude] },
+      properties: { id: reading.id, aqi: reading.aqi, color: usAqiColor(reading.aqi) },
+    })),
+  }
+}
+
+function mapViewBounds(map: MapLibreMap): AqiMapBounds | undefined {
+  const [[west, south], [east, north]] = map.getBounds().toArray()
+  if (west >= east || south >= north) return undefined
+  return { west, south, east, north }
+}
+
 function formatUpdatedAt(value: string | null): string {
   if (!value || !Number.isFinite(Date.parse(value))) return 'No station observations'
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
@@ -103,13 +129,19 @@ export default function AqiMapPage() {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const stationDataRef = useRef<AqiStation[]>([])
+  const modeledDataRef = useRef<ModeledAqiReading[]>([])
   const visibleStationDataRef = useRef<AqiStation[]>([])
   const [stationResponse, setStationResponse] = useState<AqiStationsResponse | null>(null)
+  const [modeledAqiResponse, setModeledAqiResponse] = useState<ModeledAqiResponse | null>(null)
+  const [modeledAqiError, setModeledAqiError] = useState<string | null>(null)
+  const [loadingModeledAqi, setLoadingModeledAqi] = useState(false)
   const [loadingStations, setLoadingStations] = useState(true)
   const [stationError, setStationError] = useState<string | null>(null)
   const [mapError, setMapError] = useState<string | null>(null)
   const [selectedStation, setSelectedStation] = useState<AqiStation | null>(null)
+  const [selectedModelReading, setSelectedModelReading] = useState<ModeledAqiReading | null>(null)
   const [stationsVisible, setStationsVisible] = useState(true)
+  const [modeledAqiVisible, setModeledAqiVisible] = useState(true)
   const [enabledSeverities, setEnabledSeverities] = useState<Severity[]>([...SEVERITY_FILTERS])
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<PlaceSearchResult[]>([])
@@ -117,13 +149,19 @@ export default function AqiMapPage() {
   const [searching, setSearching] = useState(false)
   const [locating, setLocating] = useState(false)
   const [locationMessage, setLocationMessage] = useState<string | null>(null)
-  const [visibleArea, setVisibleArea] = useState({ count: 0, averageAqi: null as number | null })
+  const [visibleArea, setVisibleArea] = useState({
+    count: 0,
+    averageAqi: null as number | null,
+    modeledCount: 0,
+    modeledAverageAqi: null as number | null,
+  })
   const [mapLoaded, setMapLoaded] = useState(false)
 
   const stations = useMemo(
     () => (stationResponse?.stations ?? []).filter(isValidStation),
     [stationResponse],
   )
+  const modeledReadings = useMemo(() => modeledAqiResponse?.readings ?? [], [modeledAqiResponse])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -162,6 +200,34 @@ export default function AqiMapPage() {
     })
     map.on('load', () => {
       map.fitBounds(DELHI_BOUNDS, { padding: 24, duration: 0 })
+      map.addSource('aqi-model-estimates', {
+        type: 'geojson',
+        data: createModeledFeatures([]),
+      })
+      map.addLayer({
+        id: 'aqi-model-points',
+        type: 'circle',
+        source: 'aqi-model-estimates',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': 7,
+          'circle-opacity': 0.82,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'aqi-model-labels',
+        type: 'symbol',
+        source: 'aqi-model-estimates',
+        layout: {
+          'text-field': ['to-string', ['get', 'aqi']],
+          'text-offset': [0, 1.5],
+          'text-size': 10,
+          'text-allow-overlap': false,
+        },
+        paint: { 'text-color': '#24342b', 'text-halo-color': '#fffdf6', 'text-halo-width': 1.5 },
+      })
       map.addSource('aqi-stations', {
         type: 'geojson',
         data: createStationFeatures(stationDataRef.current),
@@ -224,7 +290,7 @@ export default function AqiMapPage() {
         const clusterId = feature?.properties?.cluster_id
         const source = map.getSource('aqi-stations') as GeoJSONSource
         if (typeof clusterId !== 'number') return
-        void source.getClusterExpansionZoom(clusterId).then((zoom) => {
+        void source.getClusterExpansionZoom(clusterId).then((zoom: number) => {
           const geometry = feature?.geometry
           if (geometry?.type === 'Point') {
             map.easeTo({ center: geometry.coordinates as [number, number], zoom })
@@ -236,13 +302,23 @@ export default function AqiMapPage() {
       map.on('click', 'aqi-station-points', (event: MapLayerMouseEvent) => {
         const id = event.features?.[0]?.properties?.id
         if (typeof id === 'string') {
+          setSelectedModelReading(null)
           setSelectedStation(stationDataRef.current.find((station) => station.id === id) ?? null)
+        }
+      })
+      map.on('click', 'aqi-model-points', (event: MapLayerMouseEvent) => {
+        const id = event.features?.[0]?.properties?.id
+        if (typeof id === 'string') {
+          setSelectedStation(null)
+          setSelectedModelReading(modeledDataRef.current.find((reading) => reading.id === id) ?? null)
         }
       })
       map.on('mouseenter', 'aqi-clusters', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'aqi-clusters', () => { map.getCanvas().style.cursor = '' })
       map.on('mouseenter', 'aqi-station-points', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'aqi-station-points', () => { map.getCanvas().style.cursor = '' })
+      map.on('mouseenter', 'aqi-model-points', () => { map.getCanvas().style.cursor = 'pointer' })
+      map.on('mouseleave', 'aqi-model-points', () => { map.getCanvas().style.cursor = '' })
       setMapLoaded(true)
     })
 
@@ -255,6 +331,60 @@ export default function AqiMapPage() {
       setMapLoaded(false)
     }
   }, [])
+
+  useEffect(() => {
+    modeledDataRef.current = modeledReadings
+    const source = mapRef.current?.getSource('aqi-model-estimates') as GeoJSONSource | undefined
+    if (source) source.setData(createModeledFeatures(modeledReadings))
+  }, [modeledReadings])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!mapLoaded || !map) return
+    let timer: number | undefined
+    let controller: AbortController | undefined
+    let active = true
+    const loadEstimates = () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        controller?.abort()
+        const bounds = mapViewBounds(map)
+        if (!bounds) {
+          setModeledAqiError('Modeled AQI is unavailable for a map view crossing the date line.')
+          setModeledAqiResponse(null)
+          setLoadingModeledAqi(false)
+          return
+        }
+        const requestController = new AbortController()
+        controller = requestController
+        setSelectedModelReading(null)
+        setModeledAqiResponse(null)
+        setModeledAqiError(null)
+        setLoadingModeledAqi(true)
+        void api.getModeledAqi(bounds, requestController.signal)
+          .then((response) => {
+            if (!active) return
+            setModeledAqiResponse(response)
+            setModeledAqiError(null)
+          })
+          .catch((reason: unknown) => {
+            if (!active || requestController.signal.aborted) return
+            setModeledAqiError(reason instanceof Error ? reason.message : 'Modeled AQI estimates could not be loaded.')
+          })
+          .finally(() => {
+            if (active && !requestController.signal.aborted) setLoadingModeledAqi(false)
+          })
+      }, 500)
+    }
+    map.on('moveend', loadEstimates)
+    loadEstimates()
+    return () => {
+      active = false
+      if (timer !== undefined) window.clearTimeout(timer)
+      controller?.abort()
+      map.off('moveend', loadEstimates)
+    }
+  }, [mapLoaded])
 
   useEffect(() => {
     const map = mapRef.current
@@ -274,23 +404,37 @@ export default function AqiMapPage() {
   useEffect(() => {
     const map = mapRef.current
     if (!mapLoaded || !map) return
+    map.setLayoutProperty('aqi-model-points', 'visibility', modeledAqiVisible ? 'visible' : 'none')
+    map.setLayoutProperty('aqi-model-labels', 'visibility', modeledAqiVisible ? 'visible' : 'none')
+  }, [mapLoaded, modeledAqiVisible])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!mapLoaded || !map) return
     const updateVisibleSummary = () => {
       const bounds = map.getBounds()
       const visible = visibleStationDataRef.current.filter((station) =>
         bounds.contains([station.longitude, station.latitude]),
       )
       const classified = visible.filter((station) => station.aqi_system === 'INDIA_CPCB')
+      const visibleModeled = modeledReadings.filter((reading) =>
+        modeledAqiVisible && bounds.contains([reading.longitude, reading.latitude]),
+      )
       setVisibleArea({
         count: visible.length,
         averageAqi: classified.length
           ? Math.round(classified.reduce((sum, station) => sum + station.aqi, 0) / classified.length)
+          : null,
+        modeledCount: visibleModeled.length,
+        modeledAverageAqi: visibleModeled.length
+          ? Math.round(visibleModeled.reduce((sum, reading) => sum + reading.aqi, 0) / visibleModeled.length)
           : null,
       })
     }
     map.on('moveend', updateVisibleSummary)
     updateVisibleSummary()
     return () => { map.off('moveend', updateVisibleSummary) }
-  }, [enabledSeverities, mapLoaded, stations, stationsVisible])
+  }, [enabledSeverities, mapLoaded, modeledAqiVisible, modeledReadings, stations, stationsVisible])
 
   useEffect(() => {
     const normalizedQuery = query.trim()
@@ -320,6 +464,7 @@ export default function AqiMapPage() {
   function resetDelhiView() {
     mapRef.current?.fitBounds(DELHI_BOUNDS, { padding: 24, duration: 600 })
     setSelectedStation(null)
+    setSelectedModelReading(null)
     setLocationMessage(null)
   }
 
@@ -358,14 +503,14 @@ export default function AqiMapPage() {
   }
 
   return (
-    <main className="min-w-0 overflow-y-auto bg-[#f8f7ef] px-4 py-5 sm:px-6 lg:px-8">
+    <main className="global-aqi-map-page min-w-0 overflow-y-auto bg-[#f8f7ef] px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-5 pb-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#548066]">Delhi · live air intelligence</p>
-            <h1 className="mt-1 text-3xl font-medium tracking-[-.03em] text-[#17231c] sm:text-4xl">Delhi air quality map</h1>
+            <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#548066]">Global modeled air quality · Delhi station data</p>
+            <h1 className="mt-1 text-3xl font-medium tracking-[-.03em] text-[#17231c] sm:text-4xl">Air quality map</h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-[#718077]">
-              Explore the full NCT viewport and nearby NCR context. Station colors use Indian CPCB AQI categories only when verified station readings are available.
+              Explore global, model-estimated US AQI. CPCB monitor readings are shown separately when available; pan and zoom to load estimates for another region.
             </p>
           </div>
           <div className="rounded-xl border border-[#dce5de] bg-white px-4 py-2 text-sm text-[#526258]">
@@ -373,11 +518,11 @@ export default function AqiMapPage() {
           </div>
         </header>
 
-        <section className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]" aria-label="Interactive Delhi AQI map">
+        <section className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]" aria-label="Interactive global AQI map">
           <div className="min-w-0">
             <div className="relative h-[62vh] min-h-[440px] overflow-hidden rounded-2xl border border-[#dce5de] bg-[#e8ece6] shadow-[0_8px_28px_rgba(23,35,28,.08)] sm:h-[68vh] xl:h-[calc(100vh-240px)]">
               <>
-                  <div ref={mapContainerRef} className="absolute inset-0" aria-label="Interactive map of Delhi and the National Capital Territory" />
+                  <div ref={mapContainerRef} className="h-full w-full" aria-label="Interactive global AQI map" />
                   {!mapLoaded && !mapError && (
                     <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white/95 px-4 py-3 text-sm text-[#526258] shadow">
                       Loading OpenStreetMap…
@@ -390,12 +535,12 @@ export default function AqiMapPage() {
                   )}
                   <div className="absolute left-3 top-3 z-10 flex w-[min(360px,calc(100%-24px))] flex-col gap-2">
                     <form className="flex rounded-xl border border-[#dce5de] bg-white shadow-md" onSubmit={(event) => event.preventDefault()}>
-                      <label className="sr-only" htmlFor="delhi-place-search">Search Delhi locality or address</label>
+                      <label className="sr-only" htmlFor="delhi-place-search">Search locality or address</label>
                       <input
                         id="delhi-place-search"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search a Delhi locality or address"
+                        placeholder="Search a locality or address"
                         className="h-11 min-w-0 flex-1 rounded-l-xl bg-transparent px-3 text-sm outline-none placeholder:text-[#89958d]"
                       />
                       <button type="button" onClick={() => setQuery('')} className="px-3 text-xs font-semibold text-[#52735e]" aria-label="Clear place search">Clear</button>
@@ -429,20 +574,26 @@ export default function AqiMapPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#78847d]">
               <span>Map tiles &copy; OpenStreetMap contributors</span>
-              <span>NCT view bounds: 76.83–77.36° E, 28.39–28.89° N</span>
+              <span>Model estimates are available worldwide as you pan and zoom</span>
             </div>
           </div>
 
           <aside className="flex min-w-0 flex-col gap-4">
             <section className="rounded-2xl border border-[#dce5de] bg-white p-4 shadow-sm" aria-labelledby="aqi-legend-title">
               <div className="flex items-center justify-between gap-3">
-                <h2 id="aqi-legend-title" className="text-lg text-[#17231c]">Station observations</h2>
-                <label className="flex items-center gap-2 text-xs text-[#526258]">
+                <h2 id="aqi-legend-title" className="text-lg text-[#17231c]">AQI data layers</h2>
+              </div>
+              <div className="mt-3 flex flex-col gap-2 text-xs text-[#526258]">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={modeledAqiVisible} onChange={(event) => setModeledAqiVisible(event.target.checked)} className="accent-[#174d35]" />
+                  Show global modeled estimates · US AQI
+                </label>
+                <label className="flex items-center gap-2">
                   <input type="checkbox" checked={stationsVisible} onChange={(event) => setStationsVisible(event.target.checked)} className="accent-[#174d35]" />
-                  Show stations
+                  Show Delhi CPCB monitor observations
                 </label>
               </div>
-              <p className="mt-1 text-xs text-[#78847d]">Indian National AQI · CPCB bands</p>
+              <p className="mt-3 text-xs text-[#78847d]">Indian National AQI · CPCB station bands</p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {SEVERITY_FILTERS.map((severity) => {
                   const color = indianAqiCategory(({ Good: 25, Satisfactory: 75, Moderate: 150, Poor: 250, 'Very Poor': 350, Severe: 450 })[severity]).color
@@ -456,6 +607,22 @@ export default function AqiMapPage() {
                     </label>
                   )
                 })}
+              </div>
+              <p className="mt-3 text-xs font-semibold text-[#526258]">Global model · US AQI bands</p>
+              <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] text-[#526258]">
+                {[
+                  ['Good 0–50', '#23864b'],
+                  ['Moderate 51–100', '#dfaa23'],
+                  ['USG 101–150', '#e87932'],
+                  ['Unhealthy 151–200', '#c9473d'],
+                  ['Very unhealthy 201–300', '#8c4da8'],
+                  ['Hazardous 301+', '#7d3042'],
+                ].map(([label, color]) => (
+                  <span key={label} className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+                    {label}
+                  </span>
+                ))}
               </div>
             </section>
 
@@ -471,12 +638,29 @@ export default function AqiMapPage() {
                   <p className="text-xs text-[#718077]">average CPCB AQI</p>
                 </div>
               </div>
+              <div className="mt-3 rounded-lg bg-[#f4f7f3] p-3">
+                <div className="flex items-center justify-between gap-2 text-xs text-[#718077]">
+                  <span>US AQI model estimates in view</span>
+                  <strong className="text-sm text-[#174d35]">{visibleArea.modeledCount}</strong>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-2 text-xs text-[#718077]">
+                  <span>Average modeled US AQI</span>
+                  <strong className="text-sm text-[#174d35]">{visibleArea.modeledAverageAqi ?? '—'}</strong>
+                </div>
+              </div>
               <p className="mt-3 border-t border-[#edf0eb] pt-3 text-xs leading-5 text-[#718077]">
+                {loadingModeledAqi
+                  ? 'Loading free global model estimates…'
+                  : modeledAqiError
+                  ? `Modeled AQI request failed: ${modeledAqiError}`
+                  : modeledAqiResponse?.detail ?? 'US AQI values are CAMS-based model estimates from Open-Meteo, not monitoring-station readings.'}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[#718077]">
                 {loadingStations
-                  ? 'Loading coordinate-bearing station observations…'
+                  ? 'Loading Delhi CPCB monitor observations…'
                   : stationError
-                  ? `Station data request failed: ${stationError}`
-                  : stationResponse?.detail ?? 'Showing verified monitoring-station observations only.'}
+                  ? `CPCB station request failed: ${stationError}`
+                  : stationResponse?.detail ?? 'CPCB monitor readings use the Indian National AQI scale and are kept separate from model estimates.'}
               </p>
               {stationResponse?.status === 'stale' && <p className="mt-2 text-xs font-medium text-[#9a6b17]">These station observations are stale.</p>}
               {stationResponse?.status === 'available' && stations.length === 0 && <p className="mt-2 text-xs text-[#718077]">No valid, coordinate-bearing AQI stations were returned.</p>}
@@ -513,9 +697,28 @@ export default function AqiMapPage() {
                 <p className="mt-3 text-xs text-[#78847d]">Source: {selectedStation.source}</p>
               </section>
             )}
+            {selectedModelReading && (
+              <section className="rounded-2xl border border-[#dce5de] bg-white p-4 shadow-sm" aria-labelledby="selected-model-title">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[.12em] text-[#78847d]">Modeled estimate · US AQI</p>
+                    <h2 id="selected-model-title" className="mt-1 text-lg text-[#17231c]">{selectedModelReading.name}</h2>
+                  </div>
+                  <button type="button" onClick={() => setSelectedModelReading(null)} className="rounded-lg px-2 py-1 text-xs text-[#52735e]" aria-label="Close estimate details">Close</button>
+                </div>
+                <p className="mt-3 text-3xl font-semibold text-[#174d35]">{selectedModelReading.aqi} <span className="text-sm font-normal">US AQI</span></p>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#647168]">
+                  <div><dt>PM2.5</dt><dd className="font-medium text-[#24342b]">{selectedModelReading.pm25 ?? '—'} µg/m³</dd></div>
+                  <div><dt>PM10</dt><dd className="font-medium text-[#24342b]">{selectedModelReading.pm10 ?? '—'} µg/m³</dd></div>
+                  <div><dt>Coordinates</dt><dd className="font-medium text-[#24342b]">{selectedModelReading.latitude.toFixed(3)}, {selectedModelReading.longitude.toFixed(3)}</dd></div>
+                  <div><dt>Model time</dt><dd className="font-medium text-[#24342b]">{formatUpdatedAt(selectedModelReading.observed_at)}</dd></div>
+                </dl>
+                <p className="mt-3 text-xs text-[#78847d]">Estimate, not a live station observation. Source: {selectedModelReading.source}.</p>
+              </section>
+            )}
 
             <div className="rounded-xl border border-[#e6dfcc] bg-[#fffaf0] px-4 py-3 text-xs leading-5 text-[#756746]">
-              No synthetic AQI readings or monitoring stations are plotted. A Delhi administrative boundary is omitted because no verified boundary dataset is configured.
+              Modeled estimates are clearly distinguished from CPCB monitor observations. No synthetic station locations or AQI readings are plotted. Data: Open-Meteo Air Quality API (CAMS model); OpenStreetMap map tiles.
             </div>
           </aside>
         </section>

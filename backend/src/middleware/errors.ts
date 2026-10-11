@@ -4,6 +4,7 @@ import { PersistenceError } from '../aws/dynamodb-repositories.js'
 import { LocationSearchUnavailableError } from '../services/location-search-service.js'
 import { CpcbAqiUnavailableError } from '../services/cpcb-aqi-client.js'
 import { LocationRoutesUnavailableError } from '../services/location-routes-service.js'
+import { OpenMeteoAqiUnavailableError } from '../services/open-meteo-aqi-client.js'
 
 export class RequestValidationError extends Error {
   constructor(readonly issues: { loc: (string | number)[]; msg: string; type: string }[]) {
@@ -58,6 +59,10 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
     return
   }
   if (error instanceof LocationRoutesUnavailableError) {
+    res.status(503).json({ detail: error.message })
+    return
+  }
+  if (error instanceof OpenMeteoAqiUnavailableError) {
     res.status(503).json({ detail: error.message })
     return
   }

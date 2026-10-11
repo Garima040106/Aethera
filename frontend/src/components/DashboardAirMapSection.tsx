@@ -5,7 +5,7 @@ import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
-import type { AqiStation, AqiStationsResponse } from '../services/api'
+import type { AqiMapBounds, AqiStation, AqiStationsResponse, ModeledAqiReading, ModeledAqiResponse } from '../services/api'
 import { calculateRoutes, getRouteAqiScore } from '../services/locationRoutes'
 import type { RouteAqiScore } from '../services/locationRoutes'
 
@@ -46,6 +46,32 @@ function createStationFeatures(stations: AqiStation[]): FeatureCollection<Point,
       properties: { id: station.id, name: station.name, aqi: station.aqi },
     })),
   }
+}
+
+function usAqiColor(aqi: number): string {
+  if (aqi <= 50) return '#23864b'
+  if (aqi <= 100) return '#dfaa23'
+  if (aqi <= 150) return '#e87932'
+  if (aqi <= 200) return '#c9473d'
+  if (aqi <= 300) return '#8c4da8'
+  return '#7d3042'
+}
+
+function createModeledFeatures(readings: ModeledAqiReading[]): FeatureCollection<Point, { id: string; aqi: number; color: string }> {
+  return {
+    type: 'FeatureCollection',
+    features: readings.map((reading) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [reading.longitude, reading.latitude] },
+      properties: { id: reading.id, aqi: reading.aqi, color: usAqiColor(reading.aqi) },
+    })),
+  }
+}
+
+function mapViewBounds(map: MapLibreMap): AqiMapBounds | undefined {
+  const [[west, south], [east, north]] = map.getBounds().toArray()
+  if (west >= east || south >= north) return undefined
+  return { west, south, east, north }
 }
 
 function createRouteFeatures(
@@ -109,6 +135,9 @@ export default function DashboardAirMapSection() {
   const mapRef = useRef<MapLibreMap | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [response, setResponse] = useState<AqiStationsResponse | null>(null)
+  const [modeledAqiResponse, setModeledAqiResponse] = useState<ModeledAqiResponse | null>(null)
+  const [modeledAqiError, setModeledAqiError] = useState<string | null>(null)
+  const [loadingModeledAqi, setLoadingModeledAqi] = useState(false)
   const [loadingStations, setLoadingStations] = useState(true)
   const [stationError, setStationError] = useState<string | null>(null)
   const [routeStatus, setRouteStatus] = useState<{ key: string; message: string } | null>(null)
@@ -167,6 +196,34 @@ export default function DashboardAirMapSection() {
     map.on('error', () => setMapError('OpenStreetMap tiles could not be loaded. Check your connection.'))
     map.on('load', () => {
       map.fitBounds(DELHI_BOUNDS, { padding: 28, duration: 0 })
+      map.addSource('dashboard-aqi-model', {
+        type: 'geojson',
+        data: createModeledFeatures([]),
+      })
+      map.addLayer({
+        id: 'dashboard-aqi-model-points',
+        type: 'circle',
+        source: 'dashboard-aqi-model',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': 7,
+          'circle-opacity': 0.82,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+      })
+      map.addLayer({
+        id: 'dashboard-aqi-model-labels',
+        type: 'symbol',
+        source: 'dashboard-aqi-model',
+        layout: {
+          'text-field': ['to-string', ['get', 'aqi']],
+          'text-offset': [0, 1.4],
+          'text-size': 10,
+          'text-allow-overlap': false,
+        },
+        paint: { 'text-color': '#26382d', 'text-halo-color': '#fffdf6', 'text-halo-width': 1.5 },
+      })
       map.addSource('dashboard-aqi-stations', {
         type: 'geojson',
         data: createStationFeatures([]),
@@ -221,6 +278,60 @@ export default function DashboardAirMapSection() {
       setMapLoaded(false)
     }
   }, [])
+
+  const modeledReadings = useMemo(() => modeledAqiResponse?.readings ?? [], [modeledAqiResponse])
+  useEffect(() => {
+    const map = mapRef.current
+    const source = map?.getSource('dashboard-aqi-model') as GeoJSONSource | undefined
+    source?.setData(createModeledFeatures(modeledReadings))
+  }, [mapLoaded, modeledReadings])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!mapLoaded || !map) return
+    let timer: number | undefined
+    let controller: AbortController | undefined
+    let active = true
+    const loadEstimates = () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        controller?.abort()
+        const bounds = mapViewBounds(map)
+        if (!bounds) {
+          setModeledAqiError('Modeled AQI is unavailable for a map view crossing the date line.')
+          setModeledAqiResponse(null)
+          setLoadingModeledAqi(false)
+          return
+        }
+        const requestController = new AbortController()
+        controller = requestController
+        setModeledAqiResponse(null)
+        setModeledAqiError(null)
+        setLoadingModeledAqi(true)
+        void api.getModeledAqi(bounds, requestController.signal)
+          .then((result) => {
+            if (!active) return
+            setModeledAqiResponse(result)
+            setModeledAqiError(null)
+          })
+          .catch((reason: unknown) => {
+            if (!active || requestController.signal.aborted) return
+            setModeledAqiError(reason instanceof Error ? reason.message : 'Modeled AQI estimates could not be loaded.')
+          })
+          .finally(() => {
+            if (active && !requestController.signal.aborted) setLoadingModeledAqi(false)
+          })
+      }, 500)
+    }
+    map.on('moveend', loadEstimates)
+    loadEstimates()
+    return () => {
+      active = false
+      if (timer !== undefined) window.clearTimeout(timer)
+      controller?.abort()
+      map.off('moveend', loadEstimates)
+    }
+  }, [mapLoaded])
 
   useEffect(() => {
     if (!mapLoaded) return
@@ -291,7 +402,7 @@ export default function DashboardAirMapSection() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[.14em] text-[#548066]">Live Delhi air map</p>
           <h2 id="dashboard-air-map-heading" className="mt-1 text-xl font-semibold text-[#17231c] sm:text-2xl">Lower-AQI areas &amp; green pathways</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#718077]">Only current CPCB readings are shown. A green pathway appears only when the route has enough nearby observations and scores at or below AQI 100.</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#718077]">Free global US AQI model estimates appear separately from current Delhi CPCB monitor readings. A green pathway uses only nearby CPCB observations and is never inferred from model estimates.</p>
         </div>
         <Link to="/air-map" className="rounded-lg border border-[#dce5de] px-3 py-2 text-sm font-semibold text-[#24583b] hover:bg-[#f5f8f4]">
           Open full map
@@ -300,15 +411,15 @@ export default function DashboardAirMapSection() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
         <div className="relative h-[300px] overflow-hidden rounded-xl border border-[#dce5de] bg-[#e8ece6] sm:h-[360px]">
-          <div ref={containerRef} className="absolute inset-0" aria-label="Map of current AQI readings and scored green pathways in Delhi" />
+          <div ref={containerRef} className="h-full w-full" aria-label="Map of current AQI readings and scored green pathways in Delhi" />
           {mapError && (
             <div className="absolute inset-x-3 top-3 rounded-lg bg-white/95 px-3 py-2 text-xs text-[#9a3e35] shadow" role="alert">
               {mapError}
             </div>
           )}
-          {(!mapLoaded || loadingStations) && (
+          {(!mapLoaded || (loadingStations && loadingModeledAqi)) && (
             <div className="pointer-events-none absolute left-3 top-3 rounded-lg bg-white/95 px-3 py-2 text-xs text-[#526258] shadow" role="status">
-              {!mapLoaded ? 'Loading map…' : 'Loading current AQI readings…'}
+              {!mapLoaded ? 'Loading map…' : 'Loading AQI data…'}
             </div>
           )}
           {loadingRoute && (
@@ -319,6 +430,17 @@ export default function DashboardAirMapSection() {
         </div>
 
         <aside className="flex flex-col gap-3" aria-label="Current lower-AQI areas">
+          <div className="rounded-lg border border-[#dce5de] bg-[#f6f8f5] p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#526258]">Global modeled AQI · US scale</p>
+            <p className="mt-1 text-sm text-[#26382d]">
+              {loadingModeledAqi
+                ? 'Loading model estimates…'
+                : modeledAqiError
+                ? `Model data unavailable: ${modeledAqiError}`
+                : `${modeledReadings.length} model estimates in this map view`}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[#718077]">Open-Meteo / CAMS model output, not station readings. Estimates update when the map moves.</p>
+          </div>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[#26382d]">Current lower-AQI areas</h3>
             <span className="rounded-full bg-[#e8f4ec] px-2 py-1 text-xs font-semibold text-[#246b49]">{cleanStations.length}</span>
