@@ -1,5 +1,6 @@
 import {
   DynamoDBClient,
+  DescribeTableCommand,
   type DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb'
 import {
@@ -163,4 +164,16 @@ export function createDocumentClient(config: DynamoDBClientConfig): DynamoDBDocu
   return DynamoDBDocumentClient.from(new DynamoDBClient(config), {
     marshallOptions: { removeUndefinedValues: true },
   })
+}
+
+export async function checkDynamoDBTableConnectivity(
+  client: DynamoDBClient,
+  tableName: string,
+): Promise<void> {
+  try {
+    const result = await client.send(new DescribeTableCommand({ TableName: tableName }))
+    if (!result.Table?.TableName) throw new Error('DynamoDB table was not returned by DescribeTable.')
+  } catch (error) {
+    throw new PersistenceError('connectivity check', error)
+  }
 }

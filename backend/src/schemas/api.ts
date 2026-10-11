@@ -17,6 +17,27 @@ export const areaQuerySchema = z.object({
   area: z.string().default('noida'),
 })
 
+export const placeSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(160),
+})
+
+const routePositionSchema = z.tuple([
+  z.number().finite().min(-180).max(180),
+  z.number().finite().min(-90).max(90),
+])
+
+export const locationRouteSchema = z.object({
+  origin: routePositionSchema,
+  destination: routePositionSchema,
+})
+
+export const routeAqiScoreSchema = z.object({
+  geometry: z.object({
+    type: z.literal('LineString'),
+    coordinates: z.array(routePositionSchema).min(2).max(1000),
+  }),
+})
+
 export const healthEventSchema = z.object({
   user_id: z.string().default('kamla_noida'),
   consent_given: z.boolean().default(true),

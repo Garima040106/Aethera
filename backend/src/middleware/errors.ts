@@ -1,6 +1,9 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { ZodError } from 'zod'
 import { PersistenceError } from '../aws/dynamodb-repositories.js'
+import { LocationSearchUnavailableError } from '../services/location-search-service.js'
+import { CpcbAqiUnavailableError } from '../services/cpcb-aqi-client.js'
+import { LocationRoutesUnavailableError } from '../services/location-routes-service.js'
 
 export class RequestValidationError extends Error {
   constructor(readonly issues: { loc: (string | number)[]; msg: string; type: string }[]) {
@@ -43,6 +46,18 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _ne
     return
   }
   if (error instanceof PersistenceError) {
+    res.status(503).json({ detail: error.message })
+    return
+  }
+  if (error instanceof LocationSearchUnavailableError) {
+    res.status(503).json({ detail: error.message })
+    return
+  }
+  if (error instanceof CpcbAqiUnavailableError) {
+    res.status(503).json({ detail: error.message })
+    return
+  }
+  if (error instanceof LocationRoutesUnavailableError) {
     res.status(503).json({ detail: error.message })
     return
   }

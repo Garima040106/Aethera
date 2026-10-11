@@ -3,7 +3,7 @@
  * Supports configurable base URL, timeout, local offline caching, and graceful fallback.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
 
 export interface ForecastPoint {
   hour: number
@@ -20,7 +20,7 @@ export interface ForecastPoint {
   aqi_coupled: number
   aqi_category: string
   aqi_uncoupled: number
-  inversion_level: 'Weak' | 'Moderate' | 'Strong'
+  inversion_level: "Weak" | "Moderate" | "Strong"
   ventilation_coefficient_m2s: number
   feedback_enhancement_aqi: number
   data_quality: string
@@ -52,7 +52,7 @@ export interface ForecastResponse {
 export interface InversionPoint {
   hour: number
   timestamp: string
-  strength: 'Weak' | 'Moderate' | 'Strong'
+  strength: "Weak" | "Moderate" | "Strong"
   ventilation_coefficient: number
   surface_temp_c: number
   air_temp_gradient_c: number
@@ -63,7 +63,7 @@ export interface InversionPoint {
 export interface InversionResponse {
   area: string
   updated_at: string
-  inversion_status_now: 'Weak' | 'Moderate' | 'Strong'
+  inversion_status_now: "Weak" | "Moderate" | "Strong"
   peak_inversion_window: string
   proxy_notes: string
   timeline: InversionPoint[]
@@ -137,12 +137,58 @@ export interface AlertSimulateResponse {
 
 export interface HealthEventResponse {
   event_id: string
-  status: 'ACCEPTED' | 'REJECTED_NO_CONSENT' | 'DEDUPLICATED' | 'ESCALATED'
+  status: "ACCEPTED" | "REJECTED_NO_CONSENT" | "DEDUPLICATED" | "ESCALATED"
   action_taken: string
   coarse_risk_band: string
   caregiver_notified: boolean
   message_to_caregiver: string | null
   audit_trace_id: string
+}
+
+// AQI Station types for map
+export interface AqiStation {
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  aqi: number
+  pm25?: number
+  pm10?: number
+  aqi_system: string
+  observed_at: string
+  source: string
+  locality?: string
+  estimated?: boolean
+  pollutants?: Record<string, { value: number; unit: string }>
+}
+
+export interface AqiStationsResponse {
+  stations: AqiStation[]
+  updated_at: string | null
+  status: "available" | "stale" | "empty"
+  detail?: string
+}
+
+export interface PlaceSearchResult {
+  id: string
+  label: string
+  address?: string
+  latitude: number
+  longitude: number
+}
+
+export interface RouteScoreRequest {
+  geometry: {
+    type: "LineString"
+    coordinates: [number, number][]
+  }
+}
+
+export interface RouteScoreResponse {
+  average_aqi: number
+  is_green_corridor: boolean
+  source: string
+  observed_at: string
 }
 
 // Helper with timeout and localStorage fallback
@@ -185,38 +231,85 @@ export const api = {
     return res.json()
   },
 
-  async getForecast(area: string = 'noida', hours: number = 72): Promise<ForecastResponse> {
-    return fetchWithFallback<ForecastResponse>(`/api/forecast?area=${encodeURIComponent(area)}&hours=${hours}`, `forecast_${area}`)
+  async getForecast(area: string = "noida", hours: number = 72): Promise<ForecastResponse> {
+    return fetchWithFallback<ForecastResponse>(
+      `/api/forecast?area=${encodeURIComponent(area)}&hours=${hours}`,
+      `forecast_${area}`,
+    )
   },
 
-  async getInversion(area: string = 'noida'): Promise<InversionResponse> {
-    return fetchWithFallback<InversionResponse>(`/api/inversion?area=${encodeURIComponent(area)}`, `inversion_${area}`)
+  async getInversion(area: string = "noida"): Promise<InversionResponse> {
+    return fetchWithFallback<InversionResponse>(
+      `/api/inversion?area=${encodeURIComponent(area)}`,
+      `inversion_${area}`,
+    )
   },
 
-  async getPlumes(area: string = 'noida'): Promise<PlumeResponse> {
-    return fetchWithFallback<PlumeResponse>(`/api/plumes?area=${encodeURIComponent(area)}`, `plumes_${area}`)
+  async getPlumes(area: string = "noida"): Promise<PlumeResponse> {
+    return fetchWithFallback<PlumeResponse>(
+      `/api/plumes?area=${encodeURIComponent(area)}`,
+      `plumes_${area}`,
+    )
   },
 
   async getDecisions(): Promise<DecisionsResponse> {
-    return fetchWithFallback<DecisionsResponse>('/api/decisions', 'decisions')
+    return fetchWithFallback<DecisionsResponse>("/api/decisions", "decisions")
   },
 
   async getAgentStatus() {
-    return fetchWithFallback('/api/agents/status', 'agent_status')
+    return fetchWithFallback("/api/agents/status", "agent_status")
+  },
+
+  // AQI Stations for map
+  async getAqiStations(signal?: AbortSignal): Promise<AqiStationsResponse> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 6000)
+    try {
+      const res = await fetch(`${BASE_URL}/api/aqi/stations`, {
+        signal: signal ?? controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
+      return res.json()
+    } catch (err) {
+      clearTimeout(timer)
+      throw err
+    }
+  },
+
+  async searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceSearchResult[]> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 4000)
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/places/search?query=${encodeURIComponent(query)}`,
+        { signal: signal ?? controller.signal },
+      )
+      clearTimeout(timer)
+      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
+      return res.json()
+    } catch (err) {
+      clearTimeout(timer)
+      throw err
+    }
   },
 
   async submitHealthEvent(payload: {
     user_id?: string
     consent_given: boolean
     sharing_enabled: boolean
-    coarse_risk_band: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL'
+    coarse_risk_band: "LOW" | "MODERATE" | "HIGH" | "CRITICAL"
     coarse_area: string
-    event_trigger: 'ANOMALOUS_VITALS' | 'NO_REPLY_CHECKIN' | 'MANUAL_CHECKIN' | 'MOTION_FALL'
+    event_trigger:
+      | "ANOMALOUS_VITALS"
+      | "NO_REPLY_CHECKIN"
+      | "MANUAL_CHECKIN"
+      | "MOTION_FALL"
     client_timestamp: string
   }): Promise<HealthEventResponse> {
     const res = await fetch(`${BASE_URL}/api/events/health`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
     return res.json()
@@ -226,11 +319,11 @@ export const api = {
     scenario: string
     sharing_enabled?: boolean
     allow_location_on_sos?: boolean
-    language?: 'hi' | 'en'
+    language?: "hi" | "en"
   }): Promise<AlertSimulateResponse> {
     const res = await fetch(`${BASE_URL}/api/alerts/simulate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
     return res.json()

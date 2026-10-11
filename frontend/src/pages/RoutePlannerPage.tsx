@@ -107,7 +107,7 @@ export default function RoutePlannerPage() {
           <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#548066]">Delhi NCR · journey planning</p>
           <h1 className="font-display mt-2 text-4xl font-semibold tracking-[-.03em] text-[#17231c] sm:text-5xl">Find a better way through the city.</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718077]">
-            Compare driving routes from Amazon Location. A route is called a green corridor only when a configured backend returns a route-level AQI score and marks it green.
+            Compare driving routes from Amazon Location. Green corridors are identified only from recent CPCB station observations near each route.
           </p>
         </header>
 
@@ -141,11 +141,11 @@ export default function RoutePlannerPage() {
             </button>
           </div>
           <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#87938b]">
-            <span>Amazon Location Routes v2</span>
+            <span>Amazon Location Routes SDK · backend</span>
             <span>•</span>
-            <span>{LOCATION_CONFIG.configured ? 'Route API configured' : `Missing ${LOCATION_CONFIG.missing.join(', ')}`}</span>
+            <span>AWS credentials stay on the backend</span>
             <span>•</span>
-            <span>{LOCATION_CONFIG.hasAqiScoring ? 'Route AQI scorer configured' : 'Route AQI scorer not configured'}</span>
+            <span>{LOCATION_CONFIG.hasAqiScoring ? 'CPCB route AQI scoring enabled' : 'Route AQI scorer unavailable'}</span>
           </p>
         </section>
 
@@ -199,7 +199,7 @@ export default function RoutePlannerPage() {
         )}
 
         <aside className="rounded-xl border border-[#e1e9e3] bg-[#eef4ef] p-4 text-xs leading-5 text-[#647168]">
-          A green-corridor classification depends on route-level AQI data from the configured scoring backend. If that data is absent, this planner shows route time and distance only; it does not infer clean air from route geometry or fastest travel time.
+          A green-corridor classification requires recent CPCB AQI observations within 1.5 km of the route and an average Indian AQI of 100 or below. If observations are missing or stale, the route remains unclassified.
         </aside>
       </div>
     </main>

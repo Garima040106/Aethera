@@ -22,19 +22,39 @@ browser session.
 
 ## Amazon Location routes
 
-The protected **Clean Routes** page uses Amazon Location Routes v2. It reads the API key from
-`AMAZON_LOCATION` in `frontend/.env.local` and uses `us-east-1` unless `VITE_AWS_REGION` overrides
-it. Restart Vite after changing either value. The Routes v2 API-key flow does not require a Route
-Calculator name. The key is sent to Amazon Location from the browser, so restrict it in AWS to the
-Routes capability and the deployed site's allowed referrers. Treat it as a browser-visible API key,
-not as a server-side secret.
+The older-adult dashboard embeds the route planner, which is also available on the protected
+**Clean Routes** page. Route calculation is sent to the backend (`POST /api/location/routes`), which
+uses AWS SDK for JavaScript v3 `GeoRoutesClient` and `CalculateRoutesCommand`. Locally, authenticate
+with the configured AWS CLI profile; in Lambda, the execution role provides credentials. The
+frontend does not send the Amazon Location route request directly, avoiding browser CORS and keeping
+AWS credentials out of the browser.
 
-Route-level air quality scoring is optional and is not provided by this repository's API today.
-To enable green-corridor classification, configure `VITE_ROUTE_AQI_SCORE_URL` to a trusted backend
-that accepts `POST { "geometry": { "type": "LineString", "coordinates": [[longitude, latitude], ...] } }`
-and returns `{ "average_aqi": number, "is_green_corridor": boolean, "source": string, "observed_at": string }`.
-The UI only shows a green-corridor badge when that backend returns the explicit classification and
-score; otherwise it shows Amazon's route time and distance without implying cleaner air.
+Route AQI scoring is provided by this backend at `POST /api/routes/score`. It uses recent CPCB
+stations within 1.5 km of the route and returns an explicit green-corridor classification only when
+at least one usable reading is available. `VITE_ROUTE_AQI_SCORE_URL` can override the default
+backend URL when a separate trusted scorer is deployed.
+
+## Delhi AQI map
+
+The interactive Delhi map uses MapLibre GL JS with OpenStreetMap raster tiles. No AWS map resource
+or browser key is required. OpenStreetMap attribution is shown in the map control; the public tile
+service is subject to the OpenStreetMap tile usage policy, so use a suitable tile provider for
+high-volume production traffic.
+
+Place search remains a backend operation and uses the configured Amazon Location SDK integration.
+The browser receives no AWS credentials or provider API keys.
+
+The AQI station endpoint (`GET /api/aqi/stations`) uses the existing CPCB real-time data.gov.in
+resource. Configure `CPCB_API_KEY` (or `DATA_GOV_IN_API_KEY`) and optionally
+`CPCB_AQI_RESOURCE_ID` in `backend/.env.local`. OpenAQ is a separate source: setting
+`OPENAQ_API_KEY` enables its existing PM2.5 feed for environmental forecasts unless
+`ENABLE_OPENAQ=false` is set explicitly. OpenAQ concentrations are not silently presented as CPCB
+AQI stations. NASA FIRMS reports satellite fire hotspots, not AQI readings.
+
+The route planner posts route geometry to the backend AQI scorer. It marks a corridor green only
+when recent CPCB stations within 1.5 km of the route support an average Indian AQI of 100 or below;
+routes without nearby current station readings remain unclassified. No station readings are
+fabricated.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
