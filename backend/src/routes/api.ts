@@ -37,7 +37,7 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
 
   router.get('/api/forecast', asyncHandler(async (req, res) => {
     const query = parseRequest(() => forecastQuerySchema.parse(req.query), 'query')
-    const forecast = environmental.forecast(query.area, query.hours)
+    const forecast = await environmental.forecast(query.area, query.hours)
     await repositories.environmental.putForecast(query.area, forecast)
     res.json(forecast)
   }))

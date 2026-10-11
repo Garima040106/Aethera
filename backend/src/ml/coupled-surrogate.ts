@@ -39,10 +39,16 @@ export function calculatePlumeInflux(hour: number): number {
   return Math.max(10, 45 * Math.exp(-0.06 * (hour - 42)))
 }
 
-export function runForecast(area = 'noida', hours = 72, enableFeedback = true): ForecastPoint[] {
+export function runForecast(
+  area = 'noida',
+  hours = 72,
+  enableFeedback = true,
+  initialPm25 = 94,
+): ForecastPoint[] {
   const geo = areaFor(area)
-  let pm25Coupled = 94
-  let pm25Uncoupled = 94
+  const startingPm25 = Number.isFinite(initialPm25) && initialPm25 >= 0 ? initialPm25 : 94
+  let pm25Coupled = startingPm25
+  let pm25Uncoupled = startingPm25
   const points: ForecastPoint[] = []
 
   for (let hour = 0; hour <= hours; hour += 1) {

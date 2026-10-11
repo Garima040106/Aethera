@@ -1,11 +1,15 @@
 import { areaFor, fireHotspots } from '../data/fixtures.js'
 import { runForecast } from '../ml/coupled-surrogate.js'
+import { OpenAqClient } from './openaq-client.js'
 import type { ForecastResponse, InversionResponse, MetricsResponse, PlumeResponse } from '../schemas/api.js'
 
 export class EnvironmentalService {
-  forecast(area = 'noida', hours = 72): ForecastResponse {
+  constructor(private readonly openAq = new OpenAqClient()) {}
+
+  async forecast(area = 'noida', hours = 72): Promise<ForecastResponse> {
     const location = areaFor(area)
-    const points = runForecast(area, hours, true)
+    const latestPm25 = await this.openAq.getLatestPm25()
+    const points = runForecast(area, hours, true, latestPm25?.value)
     const peak = points.reduce((max, point) => point.aqi_coupled > max.aqi_coupled ? point : max, points[0]!)
     return {
       area: location.name,
@@ -14,10 +18,12 @@ export class EnvironmentalService {
       generated_at: new Date().toISOString(),
       model_version: 'SaansSaathi-CoupledSurrogate-v1.2',
       source_provenance: {
-        cpcb: 'Deterministic sample fixture; not a live CPCB connection',
+        cpcb: latestPm25?.source ?? 'Deterministic sample fixture; OpenAQ key not configured',
         weather: 'Illustrative NOAA GFS / IMD source attribution; no live feed connected',
         fires: 'NASA FIRMS sample fixture; not a live satellite feed',
-        model: 'Saans Saathi 72-hour coupled environmental surrogate (demonstration only)',
+        model: latestPm25
+          ? 'Saans Saathi 72-hour coupled environmental surrogate initialized from live OpenAQ PM2.5'
+          : 'Saans Saathi 72-hour coupled environmental surrogate (demonstration only)',
       },
       horizon_hours: hours,
       points,

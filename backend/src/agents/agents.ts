@@ -37,8 +37,8 @@ export class SaansAgents {
     }
   }
 
-  airWatcher(area = 'noida') {
-    const forecast = this.environmental.forecast(area, 72)
+  async airWatcher(area = 'noida') {
+    const forecast = await this.environmental.forecast(area, 72)
     const inversion = this.environmental.inversion(area)
     const plume = this.environmental.plumes(area)
     return {
@@ -80,8 +80,8 @@ export class SaansAgents {
     return { agent: 'Care Circle', permitted: true, caregiver: 'Rohan', ...message, mode: this.status().active_mode }
   }
 
-  coordinate(area = 'noida') {
-    const air = this.airWatcher(area)
+  async coordinate(area = 'noida') {
+    const air = await this.airWatcher(area)
     const health = this.healthGuardian(air.peak_aqi > 350 ? 'HIGH' : 'MODERATE', 'hi')
     const care = this.careCircle('ANOMALOUS_VITALS', 'HIGH', true)
     return {
