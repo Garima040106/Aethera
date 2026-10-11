@@ -9,7 +9,12 @@ import CaregiverPage from '../pages/CaregiverPage'
 import RoutePlannerPage from '../pages/RoutePlannerPage'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <HomePage /> },
+  {
+    element: <SiteLayout />,
+    children: [
+      { path: '/', element: <HomePage /> },
+    ],
+  },
   { path: '/login', element: <LoginPage /> },
   {
     element: <ProtectedRoute />,
