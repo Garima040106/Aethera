@@ -21,6 +21,19 @@ export const placeSearchQuerySchema = z.object({
   q: z.string().trim().min(2).max(160),
 })
 
+export const aqiMapBoundsQuerySchema = z.object({
+  west: z.coerce.number().finite().min(-180).max(180),
+  south: z.coerce.number().finite().min(-85.0511).max(85.0511),
+  east: z.coerce.number().finite().min(-180).max(180),
+  north: z.coerce.number().finite().min(-85.0511).max(85.0511),
+}).refine((bounds) => bounds.west < bounds.east, {
+  message: 'west must be less than east; zoom in to an area that does not cross the date line.',
+}).refine((bounds) => bounds.south < bounds.north, {
+  message: 'south must be less than north.',
+}).refine((bounds) => bounds.east - bounds.west <= 30 && bounds.north - bounds.south <= 20, {
+  message: 'Zoom in to an area no larger than 30° longitude by 20° latitude for modeled AQI.',
+})
+
 const routePositionSchema = z.tuple([
   z.number().finite().min(-180).max(180),
   z.number().finite().min(-90).max(90),

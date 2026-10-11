@@ -103,6 +103,45 @@ describe('Express API compatibility', () => {
     await request(failedApp).get('/api/aqi/stations').expect(503)
   })
 
+  it('serves free modeled AQI readings without presenting them as CPCB station observations', async () => {
+    const modeledApp = createApplication({
+      repositories,
+      modeledAqi: {
+        getReadings: async (bounds) => {
+          expect(bounds).toEqual({ west: 77, south: 28.4, east: 77.4, north: 28.8 })
+          return [{
+            id: 'open-meteo:28.600:77.200',
+            name: 'Open-Meteo modeled AQI',
+            latitude: 28.6,
+            longitude: 77.2,
+            aqi: 159,
+            aqi_system: 'US_AQI' as const,
+            observed_at: '2026-10-11T12:00:00.000Z',
+            source: 'Open-Meteo Air Quality API · CAMS model estimate',
+            estimated: true as const,
+          }]
+        },
+      },
+    })
+    const response = await request(modeledApp)
+      .get('/api/aqi/model?west=77&south=28.4&east=77.4&north=28.8')
+      .expect(200)
+
+    expect(response.body).toMatchObject({
+      status: 'available',
+      aqi_system: 'US_AQI',
+      source: expect.stringContaining('Open-Meteo'),
+      readings: [{ aqi: 159, estimated: true, aqi_system: 'US_AQI' }],
+    })
+  })
+
+  it('requires a bounded, zoomed-in viewport for modeled AQI', async () => {
+    const response = await request(app)
+      .get('/api/aqi/model?west=-180&south=-85&east=180&north=85')
+      .expect(422)
+    expect(JSON.stringify(response.body.detail)).toContain('Zoom in')
+  })
+
   it('scores routes only from recent nearby CPCB stations', async () => {
     const cpcbAqi = {
       configured: true,

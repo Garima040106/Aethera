@@ -165,8 +165,38 @@ export interface AqiStation {
 export interface AqiStationsResponse {
   stations: AqiStation[]
   updated_at: string | null
-  status: "available" | "stale" | "empty"
+  status: "available" | "stale" | "empty" | "unavailable"
   detail?: string
+}
+
+export interface ModeledAqiReading {
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  aqi: number
+  aqi_system: "US_AQI"
+  pm25?: number
+  pm10?: number
+  observed_at: string
+  source: string
+  estimated: true
+}
+
+export interface ModeledAqiResponse {
+  readings: ModeledAqiReading[]
+  updated_at: string | null
+  status: "available" | "empty"
+  source: string
+  aqi_system: "US_AQI"
+  detail?: string
+}
+
+export interface AqiMapBounds {
+  west: number
+  south: number
+  east: number
+  north: number
 }
 
 export interface PlaceSearchResult {
@@ -277,17 +307,45 @@ export const api = {
     }
   },
 
+  async getModeledAqi(bounds: AqiMapBounds, signal?: AbortSignal): Promise<ModeledAqiResponse> {
+    const params = new URLSearchParams({
+      west: String(bounds.west),
+      south: String(bounds.south),
+      east: String(bounds.east),
+      north: String(bounds.north),
+    })
+    const res = await fetch(`${BASE_URL}/api/aqi/model?${params}`, { signal })
+    if (!res.ok) {
+      const payload: unknown = await res.json().catch(() => undefined)
+      const detail = typeof payload === "object" && payload !== null && "detail" in payload
+        ? String(payload.detail)
+        : `Modeled AQI service returned HTTP ${res.status}`
+      throw new Error(detail)
+    }
+    return res.json()
+  },
+
   async searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceSearchResult[]> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 4000)
     try {
       const res = await fetch(
-        `${BASE_URL}/api/places/search?query=${encodeURIComponent(query)}`,
+        `${BASE_URL}/api/location/search?q=${encodeURIComponent(query)}`,
         { signal: signal ?? controller.signal },
       )
       clearTimeout(timer)
       if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`)
-      return res.json()
+      const data: unknown = await res.json()
+      if (Array.isArray(data)) return data as PlaceSearchResult[]
+      if (
+        typeof data === 'object'
+        && data !== null
+        && 'results' in data
+        && Array.isArray((data as { results: unknown[] }).results)
+      ) {
+        return (data as { results: PlaceSearchResult[] }).results
+      }
+      return []
     } catch (err) {
       clearTimeout(timer)
       throw err
