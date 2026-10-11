@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   AetheraLogo,
@@ -133,11 +134,33 @@ function CompanionPreview() {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const revealTargets = document.querySelectorAll<HTMLElement>(
+      'main.public-home section, main.public-home article, main.public-home .landing-hero-grid > div',
+    )
+    const observer = new IntersectionObserver((entries, activeObserver) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-in-view')
+        activeObserver.unobserve(entry.target)
+      })
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' })
+
+    revealTargets.forEach((target) => {
+      target.classList.add('reveal-on-scroll')
+      observer.observe(target)
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <main className="public-home overflow-hidden bg-[#fffef3] text-[#19191b]">
       <section className="relative isolate">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_78%_20%,#e8e5d5_0%,transparent_40%),linear-gradient(135deg,#fffef3_0%,#f5f2e7_100%)]" />
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[.88fr_1.12fr] lg:gap-14 lg:px-10 lg:pb-32 lg:pt-28">
+        <div className="landing-hero-grid mx-auto grid max-w-7xl items-center gap-12 px-6 pb-20 pt-16 sm:px-8 sm:pb-28 sm:pt-24 lg:grid-cols-[.88fr_1.12fr] lg:gap-14 lg:px-10 lg:pb-32 lg:pt-28">
           <div className="relative z-10">
             <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-[#e4dfd0] bg-[#fffef3]/80 px-3.5 py-2 text-[10px] uppercase tracking-[.17em] text-[#62635c]">
               <AetheraLogo size={17} />
@@ -203,6 +226,76 @@ export default function HomePage() {
               <p className="mt-3 max-w-sm text-sm leading-6 text-[#62635c]">{item.text}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section id="green-corridors" className="relative overflow-hidden bg-[#e8ece2]">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-20 sm:px-8 sm:py-24 lg:grid-cols-[.85fr_1.15fr] lg:gap-14 lg:px-10">
+          <div>
+            <p className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.18em] text-[#52674f]">
+              <RouteIcon size={16} /> Route intelligence · Delhi NCR
+            </p>
+            <h2 className="mt-5 max-w-xl font-display text-5xl font-medium leading-[.96] tracking-[-.035em] text-[#19191b] sm:text-6xl">
+              A better route
+              <span className="block italic text-[#52674f]">for the air you breathe.</span>
+            </h2>
+            <p className="mt-5 max-w-lg text-sm leading-7 text-[#5e6359]">
+              Compare driving alternatives on a map with Amazon Location. When route-level AQI scoring is configured, the planner can identify a green corridor and show the supporting score.
+            </p>
+            <Link to="/routes" className="group mt-7 inline-flex min-h-12 items-center gap-3 rounded-full bg-[#19191b] px-6 text-sm text-white no-underline transition hover:bg-[#38383a]">
+              Open route planner <ArrowRightIcon className="transition-transform group-hover:translate-x-1" size={17} />
+            </Link>
+            <p className="mt-4 max-w-md text-[11px] leading-5 text-[#74796f]">
+              “Green corridor” means a route is marked by the configured AQI scorer. No route can be guaranteed pollution-free.
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-[1.5rem] border border-[#d5dbce] bg-[#f7f6ed] shadow-[0_24px_70px_-40px_rgba(25,25,27,.45)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e5e4d8] px-5 py-4 sm:px-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[.17em] text-[#777b71]">Route planner / preview</p>
+                <p className="mt-1 font-display text-2xl leading-none text-[#19191b]">Noida → Central Delhi</p>
+              </div>
+              <span className="rounded-full border border-[#d2dfcc] bg-[#e8ece2] px-3 py-1.5 text-[10px] text-[#52674f]">
+                AQI-aware when available
+              </span>
+            </div>
+            <div className="relative">
+              <svg viewBox="0 0 720 390" className="block h-auto min-h-[250px] w-full" role="img" aria-label="Illustrative map showing alternative routes from Noida to Central Delhi">
+                <rect width="720" height="390" fill="#f3f1e7" />
+                <path d="M0 76H720M0 147H720M0 224H720M0 310H720M96 0V390M208 0V390M324 0V390M452 0V390M570 0V390M664 0V390" stroke="#dfded3" strokeWidth="2" />
+                <path d="M-20 270C90 234 131 284 224 242S356 160 442 186 566 235 740 142" fill="none" stroke="#e5d8bd" strokeWidth="18" />
+                <path d="M-20 270C90 234 131 284 224 242S356 160 442 186 566 235 740 142" fill="none" stroke="#faf8ef" strokeWidth="12" />
+                <path d="M-10 88C93 136 122 111 211 143S350 247 430 267 559 300 740 282" fill="none" stroke="#e5d8bd" strokeWidth="14" />
+                <path d="M-10 88C93 136 122 111 211 143S350 247 430 267 559 300 740 282" fill="none" stroke="#faf8ef" strokeWidth="9" />
+                <path d="M90 330C163 293 186 256 243 226S344 202 383 164 471 100 623 66" fill="none" stroke="#a87c63" strokeWidth="5" strokeDasharray="8 9" strokeLinecap="round" opacity=".8" />
+                <path d="M90 330C158 300 196 291 258 272S350 246 393 202 475 140 623 66" fill="none" stroke="#52674f" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" opacity=".18" />
+                <path d="M90 330C158 300 196 291 258 272S350 246 393 202 475 140 623 66" fill="none" stroke="#52674f" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="90" cy="330" r="10" fill="#19191b" stroke="#f7f6ed" strokeWidth="4" />
+                <circle cx="623" cy="66" r="10" fill="#80553f" stroke="#f7f6ed" strokeWidth="4" />
+                <g fill="#77796f" fontFamily="Inter, sans-serif" fontSize="12">
+                  <text x="60" y="365">NOIDA</text>
+                  <text x="570" y="44">CENTRAL DELHI</text>
+                  <text x="255" y="130">RING ROAD</text>
+                  <text x="472" y="324">YAMUNA</text>
+                </g>
+                <path d="M490 254c0-15 12-27 27-27s27 12 27 27c0 19-27 48-27 48s-27-29-27-48Z" fill="#80553f" />
+                <circle cx="517" cy="253" r="8" fill="#f7f6ed" />
+              </svg>
+              <div className="absolute left-4 top-4 rounded-xl border border-[#e4e1d6] bg-[#fffef3]/95 p-3 shadow-sm backdrop-blur sm:left-5 sm:top-5">
+                <p className="text-[9px] uppercase tracking-[.15em] text-[#818278]">Suggested corridor</p>
+                <p className="mt-1 font-display text-xl leading-none text-[#52674f]">Lower exposure*</p>
+                <p className="mt-1 text-[10px] text-[#85867d]">Illustrative route preview</p>
+              </div>
+              <div className="absolute bottom-4 right-4 flex flex-wrap items-center gap-4 rounded-full border border-[#e4e1d6] bg-[#fffef3]/95 px-4 py-2 text-[10px] text-[#696b64] shadow-sm backdrop-blur">
+                <span className="inline-flex items-center gap-2"><i className="h-1 w-5 rounded bg-[#52674f]" />AQI-scored</span>
+                <span className="inline-flex items-center gap-2"><i className="w-5 border-t-2 border-dashed border-[#a87c63]" />Alternative</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 border-t border-[#e5e4d8] bg-[#f2efe4] px-5 py-3 text-[10px] leading-5 text-[#74766d] sm:px-6">
+              <span>*Illustrative only. Live corridor classification requires route-level AQI scoring and is not a pollution-free guarantee.</span>
+            </div>
+          </div>
         </div>
       </section>
 

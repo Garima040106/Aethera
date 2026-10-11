@@ -20,8 +20,12 @@ export default function PublicLayout() {
             <span>Aethera</span>
           </Link>
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="hidden items-center gap-5 md:flex">
+            <div className="hidden items-center gap-5 lg:flex">
               <a href="/#product" className="text-sm text-[#52534e] no-underline hover:text-[#80553f]">Forecast</a>
+              <a href="/#green-corridors" className="green-corridor-nav-link text-sm no-underline">
+                <span className="green-corridor-nav-indicator" aria-hidden="true" />
+                Green corridors
+              </a>
               <a href="/#companion" className="text-sm text-[#52534e] no-underline hover:text-[#80553f]">Companion</a>
               <a href="/#care-circle" className="text-sm text-[#52534e] no-underline hover:text-[#80553f]">Care circle</a>
             </div>
@@ -30,6 +34,15 @@ export default function PublicLayout() {
               {t('nav.openDashboard')}
             </Link>
           </div>
+        </nav>
+        <nav className="mx-auto mt-2 flex max-w-fit items-center gap-1 rounded-full border border-[#e7e4d9]/90 bg-[#fffef3]/95 p-1 shadow-sm backdrop-blur-xl lg:hidden" aria-label="Page sections">
+          <a href="/#product" className="rounded-full px-3 py-1.5 text-[11px] text-[#52534e] no-underline hover:bg-[#f2ecdc]">Forecast</a>
+          <a href="/#green-corridors" className="green-corridor-nav-link green-corridor-nav-link-mobile rounded-full px-3 py-1.5 text-[11px] no-underline">
+            <span className="green-corridor-nav-indicator" aria-hidden="true" />
+            Routes
+          </a>
+          <a href="/#companion" className="rounded-full px-3 py-1.5 text-[11px] text-[#52534e] no-underline hover:bg-[#efe4df]">Companion</a>
+          <a href="/#care-circle" className="rounded-full px-3 py-1.5 text-[11px] text-[#52534e] no-underline hover:bg-[#f2ecdc]">Care</a>
         </nav>
       </header>
       <Outlet />
@@ -43,10 +56,22 @@ export default function PublicLayout() {
               <div className="services-marquee-track">
                 {[0, 1].map((copy) => (
                   <ul key={copy} className="services-marquee-group" aria-hidden={copy === 1}>
-                    <li>Amazon DynamoDB</li>
-                    <li>AWS Lambda</li>
-                    <li>Amazon Bedrock</li>
-                    <li>Amazon Location</li>
+                      <li>Amazon DynamoDB</li>
+                      <li>AWS Lambda</li>
+                      <li>AWS Bedrock</li>
+                      <li>AWS Location Service</li>
+                      <li>AWS EventBridge</li>
+                      <li>Amazon S3</li>
+                      <li>Amazon CloudWatch</li>
+                      <li>AWS IAM</li>
+                      <li>AWS SNS</li>
+                      <li>AWS SQS</li>
+                      <li>AWS Step Functions</li>
+                      <li>Amazon API Gateway</li>
+                      <li>AWS CloudTrail</li>
+                      <li>AWS ECS</li>
+                      <li>AWS Timestream</li>
+                      <li>AWS QuickSight</li>
                   </ul>
                 ))}
               </div>
