@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import request from 'supertest'
 import { createApplication } from '../app.js'
-import { InMemoryAlertRepository, InMemoryDecisionRepository } from '../repositories/in-memory.js'
+import { InMemoryAlertRepository, InMemoryDecisionRepository, InMemoryEnvironmentalRepository } from '../repositories/in-memory.js'
 import type { RepositorySet } from '../aws/repositories.js'
 
 describe('Express API compatibility', () => {
@@ -9,7 +9,12 @@ describe('Express API compatibility', () => {
   let repositories: RepositorySet
 
   beforeEach(() => {
-    repositories = { alerts: new InMemoryAlertRepository(), decisions: new InMemoryDecisionRepository(), mode: 'memory' }
+    repositories = {
+      alerts: new InMemoryAlertRepository(),
+      decisions: new InMemoryDecisionRepository(),
+      environmental: new InMemoryEnvironmentalRepository(),
+      mode: 'memory',
+    }
     app = createApplication({ repositories })
   })
 
@@ -46,6 +51,17 @@ describe('Express API compatibility', () => {
 
     const metrics = await request(app).get('/api/metrics').expect(200)
     expect(metrics.body.metrics_by_horizon['0-24h']).toMatchObject({ mae: expect.any(Number), rmse: expect.any(Number) })
+  })
+
+  it('persists forecast snapshots and exposes recent environmental history', async () => {
+    const forecast = await request(app).get('/api/forecast?area=noida&hours=24').expect(200)
+    const history = await request(app).get('/api/environmental-data?area=noida&limit=5').expect(200)
+
+    expect(history.body).toMatchObject({
+      area: 'noida',
+      forecasts: [forecast.body],
+    })
+    await request(app).get('/api/environmental-data?limit=101').expect(422)
   })
 
   it('returns agent status and redacted historical decisions', async () => {

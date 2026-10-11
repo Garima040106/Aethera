@@ -8,6 +8,11 @@ export const forecastQuerySchema = z.object({
   hours: z.coerce.number().int().min(1).max(72).default(72),
 })
 
+export const environmentalHistoryQuerySchema = z.object({
+  area: z.string().default('noida'),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+})
+
 export const areaQuerySchema = z.object({
   area: z.string().default('noida'),
 })

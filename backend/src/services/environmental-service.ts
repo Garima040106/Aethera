@@ -11,7 +11,7 @@ export class EnvironmentalService {
       area: location.name,
       latitude: location.lat,
       longitude: location.lon,
-      generated_at: 'October 2026 18:30 IST (Model Run)',
+      generated_at: new Date().toISOString(),
       model_version: 'SaansSaathi-CoupledSurrogate-v1.2',
       source_provenance: {
         cpcb: 'Deterministic sample fixture; not a live CPCB connection',

@@ -6,6 +6,9 @@ frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
+backend/.env
+backend/.env.*
+!backend/.env.example
 # Python cache and virtual environments
 __pycache__/
 *.py[cod]

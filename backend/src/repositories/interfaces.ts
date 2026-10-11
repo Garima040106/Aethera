@@ -1,4 +1,4 @@
-import type { AlertRecord, DecisionAuditItem } from '../schemas/api.js'
+import type { AlertRecord, DecisionAuditItem, ForecastResponse } from '../schemas/api.js'
 
 export interface AlertRepository {
   put(record: AlertRecord): Promise<void>
@@ -8,4 +8,9 @@ export interface AlertRepository {
 export interface DecisionRepository {
   put(record: DecisionAuditItem): Promise<void>
   listRecent(limit: number): Promise<DecisionAuditItem[]>
+}
+
+export interface EnvironmentalRepository {
+  putForecast(area: string, forecast: ForecastResponse): Promise<void>
+  listRecentForecasts(area: string, limit: number): Promise<ForecastResponse[]>
 }
