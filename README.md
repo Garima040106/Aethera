@@ -97,7 +97,6 @@ The diagram below shows the product's intended system context. Only the local fr
 ```powershell
 # From the repository root, in a backend terminal
 Set-Location backend
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 npm install
 npm run dev
 ```
@@ -123,7 +122,7 @@ Set-Location ..\frontend
 npm run build
 ```
 
-Backend configuration is documented in `backend/.env.example`; the existing frontend template is `frontend/.env.example`. Actual `.env` files are git-ignored. `ENABLE_DYNAMODB=false` and `ENABLE_BEDROCK=false` are safe local defaults and require no AWS credentials.
+Backend configuration can be supplied through `backend/.env.local`, `backend/.env`, or process environment variables; these local files are git-ignored. DynamoDB and Bedrock remain disabled by default unless enabled in the backend environment.
 
 The frontend's demo login is stored in browser `localStorage`; it is a navigation/demo convenience, not authentication or access control. Never use it to protect production health data.
 
@@ -133,6 +132,7 @@ The frontend's demo login is stored in browser `localStorage`; it is a navigatio
 |---|---|
 | GET | `/health` |
 | GET | `/api/forecast?area=noida&hours=72` |
+| GET | `/api/environmental-data?area=noida&limit=10` |
 | GET | `/api/inversion?area=noida` |
 | GET | `/api/plumes?area=noida` |
 | GET | `/api/metrics` |
@@ -144,7 +144,7 @@ The frontend's demo login is stored in browser `localStorage`; it is a navigatio
 
 ### Optional AWS integrations (manual activation only)
 
-* **DynamoDB:** configure resources separately, set `ENABLE_DYNAMODB=true`, `DYNAMODB_ALERTS_TABLE`, and `DYNAMODB_DECISIONS_TABLE`, and set `AWS_REGION`. Supply identity through the standard AWS credential provider chain (for example, a locally configured AWS profile). The runtime needs `dynamodb:PutItem` and `dynamodb:GetItem` on the alert table and `dynamodb:PutItem` and `dynamodb:Scan` on the decisions table. Misconfiguration and permission failures are reported; the application does not silently fall back to memory after a failed write.
+* **DynamoDB:** to use the existing `AtheraEnvironmentalData` table, set `ENABLE_DYNAMODB=true`, `DYNAMODB_TABLE=AtheraEnvironmentalData`, and `AWS_REGION=us-east-1` in `backend/.env.local` (or export them in the backend process environment). The table must use string partition and sort keys named `pk` and `sk`. The backend uses the standard AWS SDK credential provider chain; configure an AWS CLI profile or runtime role, and grant `dynamodb:PutItem`, `dynamodb:GetItem`, and `dynamodb:Query` on that table. Environmental forecast snapshots, alert states, and redacted decision records use distinct `pk` namespaces. `GET /api/environmental-data?area=noida&limit=10` reads recent stored forecast snapshots. DynamoDB errors are returned as service-unavailable errors; the app does not silently fall back to memory after a failed operation.
 * **Bedrock:** set `ENABLE_BEDROCK=true`, `AWS_REGION`, and `BEDROCK_MODEL_ID`, then configure the standard AWS credential provider chain and grant `bedrock:Converse` for that model. The deterministic local mode remains the default. Agent-generated text is not used to make authorization, consent, health escalation, or emergency decisions.
 
 No `cdk deploy` is part of this setup. For a future deployment, review `infra/lib/aethera-stack.ts`, add and review explicit Lambda/API Gateway resources and least-privilege grants, deploy only through a separately approved process, configure the backend environment and IAM role, then set `VITE_API_BASE_URL` to the API Gateway URL and rebuild/redeploy the static frontend. `docs/migration-checklist.md` records the CDK resource keys, endpoint contracts, and remaining limitations.

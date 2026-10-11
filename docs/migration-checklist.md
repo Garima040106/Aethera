@@ -7,7 +7,7 @@ This checklist records the Python source-to-TypeScript mapping and the current A
 | Existing Python module | TypeScript implementation | Coverage / notes |
 |---|---|---|
 | `app/main.py` | `backend/src/app.ts`, `server.ts`, `lambda.ts` | Express factory, local HTTP server, and API Gateway-compatible Lambda adapter are separate. |
-| `app/api/routes.py` | `backend/src/routes/api.ts` | All nine routes are preserved. |
+| `app/api/routes.py` | `backend/src/routes/api.ts` | Original endpoint contracts are preserved. |
 | `app/schemas/models.py` | `backend/src/schemas/api.ts` | Zod request schemas and TypeScript response types; invalid requests return FastAPI-shaped `detail` errors. |
 | `app/core/config.py` | `backend/src/config/env.ts` | dotenv configuration; optional AWS integrations disabled by default. |
 | `app/core/logging.py` | `backend/src/server.ts`, `backend/src/middleware/errors.ts` | No request-body logging; health data is not logged. |
@@ -38,7 +38,8 @@ The frontend's API base URL remains `VITE_API_BASE_URL || http://localhost:8000`
 | Method and path | Query / body | Success response and status | Error behavior | Frontend consumer |
 |---|---|---|---|---|
 | `GET /health` | None | `200`; `status`, `app_name`, `version`, `environment`, `bedrock_mode`, `timestamp` | Unknown route: `404 {"detail":"Not Found"}` | `api.getHealth()`; not currently used by a page |
-| `GET /api/forecast` | `area` (default `noida`), `hours` integer `1..72` (default `72`) | `200`; area/coordinates, model metadata, provenance, `horizon_hours`, hourly `points` (including hour 0), and `summary` | Invalid query: `422 {"detail":[...]}` | `DashboardPage` through `api.getForecast()` |
+| `GET /api/forecast` | `area` (default `noida`), `hours` integer `1..72` (default `72`) | `200`; area/coordinates, model metadata, provenance, `horizon_hours`, hourly `points` (including hour 0), and `summary`; stores a snapshot when DynamoDB is enabled | Invalid query: `422 {"detail":[...]}`; enabled DynamoDB write failure: `503` | `DashboardPage` through `api.getForecast()` |
+| `GET /api/environmental-data` | `area` (default `noida`), `limit` integer `1..100` (default `10`) | `200`; area and newest persisted forecast snapshots for that area | Invalid query: `422`; enabled DynamoDB read failure: `503` | Direct endpoint |
 | `GET /api/inversion` | `area` (default `noida`) | `200`; area, update/proxy notes, `inversion_status_now`, `peak_inversion_window`, `timeline` | Invalid query: `422` | `DashboardPage` through `api.getInversion()` |
 | `GET /api/plumes` | `area` (default `noida`) | `200`; area, arrival/wind/trapping metadata, hotspots and trajectory path | Invalid query: `422` | `DashboardPage` through `api.getPlumes()` |
 | `GET /api/metrics` | None | `200`; model/evaluation metadata, horizon metrics, baseline comparisons, limitations | No optional service required | Available for direct clients; no current page call |
@@ -60,7 +61,7 @@ For JSON validation, Express uses HTTP `422` and a FastAPI-compatible `detail` a
 * An SNS topic and Step Functions alert-ladder state machine. Its CloudWatch Logs group has a 14-day retention policy.
 * A Bedrock IAM `PolicyStatement` object. In the currently inspected CDK source it is not attached to a role or grant, and there is no Lambda/API Gateway backend resource or DynamoDB grant.
 
-No resource is assumed to exist in an AWS account. Manual backend integration requires actual table names in environment variables, AWS standard credentials/provider-chain configuration, correct region, and IAM permissions for the specific DynamoDB operations (`PutItem`, `GetItem`, and `Scan`). Bedrock additionally needs `bedrock:Converse` access to the selected model. Alert persistence stores only generated IDs, timestamp, status, and TTL; decision persistence contains minimized descriptive metadata and no raw health telemetry. Since the CDK decisions table has no time-sort key or `createdAt` index, listing recent decisions paginates a full table scan; a time-based GSI would be preferable at production scale. No AWS resources are created, deployed, or invoked by the tests.
+The Express backend can use the existing `AtheraEnvironmentalData` single table with string `pk` and `sk` keys by setting `ENABLE_DYNAMODB=true`, `DYNAMODB_TABLE=AtheraEnvironmentalData`, and `AWS_REGION=us-east-1`. It stores forecasts under `ENVIRONMENT#<area>`, alerts under `ALERT#<eventId>`, and redacted decisions under `DECISION`; recent items are read with `Query`, not a full table scan. The connection uses standard AWS credentials and does not create or modify AWS resources. The CDK definition remains a separate, older two-table example and is not used for this existing table. Alert items contain only generated IDs, timestamp, status, and TTL; decision items contain minimized descriptive metadata and no raw health telemetry. Mocked DynamoDB tests validate the key patterns without contacting AWS.
 
 ## Migration checklist / status
 
@@ -70,7 +71,7 @@ No resource is assumed to exist in an AWS account. Manual backend integration re
 - [x] Add in-memory and DynamoDB repository interfaces and implementations, opt-in configuration, and mocked-client tests.
 - [x] Add disabled-by-default Bedrock Converse client and deterministic fallback tests.
 - [x] Keep Python backend and Python tests.
-- [x] Run verification: frontend production build, backend TypeScript build, 23 backend tests, 18 retained Python tests, npm audit (0 vulnerabilities), and live HTTP checks for all nine API routes.
+- [x] Run verification: frontend production build, backend TypeScript build, 25 backend tests, 18 retained Python tests, npm audit (0 vulnerabilities), and live HTTP checks for the original API routes.
 - [x] Browser-test Home, demo Login, Dashboard data fetch, Companion health-event flow, Caregiver alert simulation, English/Hindi/Punjabi switching, and cached Dashboard response while API requests are unavailable.
 - [ ] Manual AWS credential/IAM/model access validation and deployment are intentionally out of scope.
 

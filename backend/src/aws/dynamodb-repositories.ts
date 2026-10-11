@@ -6,11 +6,10 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  ScanCommand,
-  type ScanCommandInput,
+  QueryCommand,
 } from '@aws-sdk/lib-dynamodb'
-import type { AlertRecord, DecisionAuditItem } from '../schemas/api.js'
-import type { AlertRepository, DecisionRepository } from '../repositories/interfaces.js'
+import type { AlertRecord, DecisionAuditItem, ForecastResponse } from '../schemas/api.js'
+import type { AlertRepository, DecisionRepository, EnvironmentalRepository } from '../repositories/interfaces.js'
 
 export class PersistenceError extends Error {
   constructor(operation: string, cause: unknown) {
@@ -30,6 +29,9 @@ export class DynamoDBAlertRepository implements AlertRepository {
       await this.documentClient.send(new PutCommand({
         TableName: this.tableName,
         Item: {
+          pk: `ALERT#${record.eventId}`,
+          sk: record.timestamp,
+          recordType: 'ALERT',
           eventId: record.eventId,
           timestamp: record.timestamp,
           status: record.status,
@@ -45,12 +47,18 @@ export class DynamoDBAlertRepository implements AlertRepository {
     try {
       const result = await this.documentClient.send(new GetCommand({
         TableName: this.tableName,
-        Key: { eventId, timestamp },
+        Key: { pk: `ALERT#${eventId}`, sk: timestamp },
         ProjectionExpression: 'eventId, #ts, #st, ttl',
         ExpressionAttributeNames: { '#ts': 'timestamp', '#st': 'status' },
       }))
       if (!result.Item) return undefined
-      return result.Item as AlertRecord
+      const item = result.Item as AlertRecord
+      return {
+        eventId: item.eventId,
+        timestamp: item.timestamp,
+        status: item.status,
+        ttl: item.ttl,
+      }
     } catch (error) {
       throw new PersistenceError('alert read', error)
     }
@@ -68,6 +76,9 @@ export class DynamoDBDecisionRepository implements DecisionRepository {
       await this.documentClient.send(new PutCommand({
         TableName: this.tableName,
         Item: {
+          pk: 'DECISION',
+          sk: `${record.createdAt}#${record.decisionId}`,
+          recordType: 'DECISION',
           decisionId: record.decisionId,
           createdAt: record.createdAt,
           agent: record.agent,
@@ -84,24 +95,66 @@ export class DynamoDBDecisionRepository implements DecisionRepository {
 
   async listRecent(limit: number): Promise<DecisionAuditItem[]> {
     try {
-      const items: DecisionAuditItem[] = []
-      let exclusiveStartKey: ScanCommandInput['ExclusiveStartKey']
-      do {
-        const result = await this.documentClient.send(new ScanCommand({
-          TableName: this.tableName,
-          Limit: Math.min(Math.max(limit, 1), 100),
-          ExclusiveStartKey: exclusiveStartKey,
-          ProjectionExpression: 'decisionId, createdAt, agent, title, detail, evidenceSource, riskLevel',
-        }))
-        items.push(...((result.Items ?? []) as DecisionAuditItem[]))
-        exclusiveStartKey = result.LastEvaluatedKey
-      } while (exclusiveStartKey)
-
-      return items
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        .slice(0, limit)
+      if (limit <= 0) return []
+      const result = await this.documentClient.send(new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'pk = :pk',
+        ExpressionAttributeValues: { ':pk': 'DECISION' },
+        ScanIndexForward: false,
+        Limit: Math.min(limit, 100),
+        ProjectionExpression: 'decisionId, createdAt, agent, title, detail, evidenceSource, riskLevel',
+      }))
+      return (result.Items ?? []) as DecisionAuditItem[]
     } catch (error) {
       throw new PersistenceError('decision read', error)
+    }
+  }
+}
+
+export class DynamoDBEnvironmentalRepository implements EnvironmentalRepository {
+  constructor(
+    private readonly documentClient: DynamoDBDocumentClient,
+    private readonly tableName: string,
+  ) {}
+
+  async putForecast(area: string, forecast: ForecastResponse): Promise<void> {
+    try {
+      const areaKey = area.trim().toLowerCase()
+      await this.documentClient.send(new PutCommand({
+        TableName: this.tableName,
+        Item: {
+          pk: `ENVIRONMENT#${areaKey}`,
+          sk: `FORECAST#${forecast.generated_at}`,
+          recordType: 'ENVIRONMENTAL_FORECAST',
+          area: forecast.area,
+          areaKey,
+          generatedAt: forecast.generated_at,
+          forecast,
+        },
+      }))
+    } catch (error) {
+      throw new PersistenceError('environmental forecast write', error)
+    }
+  }
+
+  async listRecentForecasts(area: string, limit: number): Promise<ForecastResponse[]> {
+    try {
+      if (limit <= 0) return []
+      const normalizedArea = area.trim().toLowerCase()
+      const result = await this.documentClient.send(new QueryCommand({
+        TableName: this.tableName,
+        KeyConditionExpression: 'pk = :pk AND begins_with(sk, :skPrefix)',
+        ExpressionAttributeValues: {
+          ':pk': `ENVIRONMENT#${normalizedArea}`,
+          ':skPrefix': 'FORECAST#',
+        },
+        ScanIndexForward: false,
+        Limit: Math.min(limit, 100),
+        ProjectionExpression: 'forecast',
+      }))
+      return (result.Items ?? []).map((item) => item.forecast as ForecastResponse)
+    } catch (error) {
+      throw new PersistenceError('environmental forecast read', error)
     }
   }
 }

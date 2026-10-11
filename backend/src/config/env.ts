@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+
+dotenv.config({ path: ['.env.local', '.env'] })
 
 function parseBoolean(value: string | undefined, fallback: boolean): boolean {
   if (value === undefined || value.trim() === '') return fallback
@@ -28,9 +30,8 @@ export const env = {
     .filter(Boolean),
   enableDynamoDB,
   enableBedrock: parseBoolean(process.env.ENABLE_BEDROCK, false),
-  awsRegion: process.env.AWS_REGION ?? 'ap-south-1',
-  alertsTable: requiredWhenEnabled(process.env.DYNAMODB_ALERTS_TABLE, 'DYNAMODB_ALERTS_TABLE', enableDynamoDB),
-  decisionsTable: requiredWhenEnabled(process.env.DYNAMODB_DECISIONS_TABLE, 'DYNAMODB_DECISIONS_TABLE', enableDynamoDB),
+  awsRegion: process.env.AWS_REGION ?? 'us-east-1',
+  dynamoDBTable: requiredWhenEnabled(process.env.DYNAMODB_TABLE, 'DYNAMODB_TABLE', enableDynamoDB),
   bedrockModelId: process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-3-5-sonnet-20241022-v2:0',
   appName: 'Saans Saathi API',
   appVersion: '1.0.0',

@@ -7,7 +7,7 @@ import { DecisionService } from '../services/decision-service.js'
 import { AlertLadder } from '../workflows/alert-ladder.js'
 import { getAgentStatus } from '../agents/agent-status.js'
 import { compareScenarios } from '../services/scenario-service.js'
-import { alertSimulationSchema, areaQuerySchema, forecastQuerySchema, healthEventSchema, scenarioCompareSchema } from '../schemas/api.js'
+import { alertSimulationSchema, areaQuerySchema, environmentalHistoryQuerySchema, forecastQuerySchema, healthEventSchema, scenarioCompareSchema } from '../schemas/api.js'
 import { asyncHandler, parseRequest } from '../middleware/errors.js'
 import { createRepositories, type RepositorySet } from '../aws/repositories.js'
 
@@ -35,14 +35,20 @@ export function createApiRouter(dependencies: RouteDependencies = {}): Router {
     })
   })
 
-  router.get('/api/forecast', (req, res, next) => {
-    try {
-      const query = parseRequest(() => forecastQuerySchema.parse(req.query), 'query')
-      res.json(environmental.forecast(query.area, query.hours))
-    } catch (error) {
-      next(error)
-    }
-  })
+  router.get('/api/forecast', asyncHandler(async (req, res) => {
+    const query = parseRequest(() => forecastQuerySchema.parse(req.query), 'query')
+    const forecast = environmental.forecast(query.area, query.hours)
+    await repositories.environmental.putForecast(query.area, forecast)
+    res.json(forecast)
+  }))
+
+  router.get('/api/environmental-data', asyncHandler(async (req, res) => {
+    const query = parseRequest(() => environmentalHistoryQuerySchema.parse(req.query), 'query')
+    res.json({
+      area: query.area,
+      forecasts: await repositories.environmental.listRecentForecasts(query.area, query.limit),
+    })
+  }))
 
   router.get('/api/inversion', (req, res, next) => {
     try {
