@@ -538,7 +538,9 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 /* Companion page overrides */
 .companion-page { background: var(--bg); min-height: 100vh; padding: 24px; }
 .route-page,
-.companion-page {
+.elder-dashboard,
+.caregiver-page {
+  grid-row: 2;
   grid-column: 2;
   width: 100%;
   min-width: 0;
@@ -565,6 +567,20 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 }
 @media (max-width: 900px) {
   .caregiver-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .app-shell:has(.elder-dashboard),
+  .app-shell:has(.caregiver-page),
+  .app-shell:has(.route-page),
+  .app-shell:has(.companion-page) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .route-page,
+  .companion-page,
+  .elder-dashboard,
+  .caregiver-page {
+    grid-column: 1;
+  }
 }
 .caregiver-phone { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
 .caregiver-phone-header { padding: 12px 16px; background: var(--bg-soft); border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }

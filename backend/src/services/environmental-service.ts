@@ -1,6 +1,7 @@
 import { areaFor, fireHotspots } from '../data/fixtures.js'
 import { runForecast } from '../ml/coupled-surrogate.js'
 import { OpenAqClient } from './openaq-client.js'
+import type { LatestPm25Reading } from './openaq-client.js'
 import type { ForecastResponse, InversionResponse, MetricsResponse, PlumeResponse } from '../schemas/api.js'
 
 export class EnvironmentalService {
@@ -8,7 +9,18 @@ export class EnvironmentalService {
 
   async forecast(area = 'noida', hours = 72): Promise<ForecastResponse> {
     const location = areaFor(area)
-    const latestPm25 = await this.openAq.getLatestPm25(location)
+    let latestPm25: LatestPm25Reading | undefined
+    try {
+      latestPm25 = await this.openAq.getLatestPm25(location)
+    } catch (error) {
+      console.warn(JSON.stringify({
+        level: 'warn',
+        service: 'environmental-forecast',
+        operation: 'openaq.latest-pm25',
+        area,
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+      }))
+    }
     const points = runForecast(area, hours, true, latestPm25?.value)
     const peak = points.reduce((max, point) => point.aqi_coupled > max.aqi_coupled ? point : max, points[0]!)
     return {
@@ -18,7 +30,8 @@ export class EnvironmentalService {
       generated_at: new Date().toISOString(),
       model_version: 'SaansSaathi-CoupledSurrogate-v1.2',
       source_provenance: {
-        cpcb: latestPm25?.source ?? 'Deterministic sample fixture; OpenAQ key not configured',
+        cpcb: 'No live CPCB observation was used for this forecast',
+        openaq: latestPm25?.source ?? 'No live OpenAQ observation available; deterministic demonstration input used',
         weather: 'Illustrative NOAA GFS / IMD source attribution; no live feed connected',
         fires: 'NASA FIRMS sample fixture; not a live satellite feed',
         model: latestPm25
